@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { performOCR } from '../utils/ocrHelper';
 import type { OCRResult } from '../utils/ocrHelper';
-import { identifySensitiveData } from '../utils/maskingLogic';
+import { parseOCRResult } from '../utils/idParsingLogic';
+import type { ParsedIDData } from '../utils/idParsingLogic';
 import type { MaskingRegion } from '../utils/maskingLogic';
 import { Loader2, Check, AlertTriangle } from 'lucide-react';
 
@@ -43,6 +44,7 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [maskingRegions, setMaskingRegions] = useState<MaskingRegion[]>([]);
     const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set());
+    const [parsedData, setParsedData] = useState<ParsedIDData | null>(null);
 
     // Manual Masking State
     const [isDrawing, setIsDrawing] = useState(false);
@@ -62,11 +64,28 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                     const result = await performOCR(imageFile, (p) => setProgress(p));
                     setOcrResult(result);
 
-                    // Auto-identify sensitive data
-                    const regions = identifySensitiveData(result);
-                    setMaskingRegions(regions);
-                    // Select all by default
-                    setSelectedRegions(new Set(regions.map(r => r.id)));
+                    // Parse ID Data
+                    const parsed = parseOCRResult(result);
+                    setParsedData(parsed);
+
+                    // Convert parsed fields to masking regions
+                    const newRegions: MaskingRegion[] = parsed.fields.map((field) => ({
+                        id: field.id,
+                        type: field.label,
+                        bbox: field.bbox,
+                        text: field.value
+                    }));
+
+                    setMaskingRegions(newRegions);
+                    // Select sensitive fields by default if needed (e.g. RRN, License Num)
+                    // For now, maybe select all or none? User requirements imply "List up" -> Toggle.
+                    // Let's select RRN and License Numbers by default as they are definitely sensitive.
+                    const sensitiveTypes = ['주민등록번호', '운전면허번호', '여권번호'];
+                    const defaultSelected = newRegions
+                        .filter(r => sensitiveTypes.includes(r.type))
+                        .map(r => r.id);
+
+                    setSelectedRegions(new Set(defaultSelected));
 
                     setStatus('ready');
                 } catch (error) {
@@ -277,52 +296,91 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                 {/* Controls / Info Area */}
                 <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 h-fit space-y-6">
                     <div>
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                            <AlertTriangle size={20} className="text-yellow-500 mr-2" />
-                            {t.detected}
+                        <h4 className="text-lg font-medium text-white mb-4 flex items-center justify-between">
+                            <div className="flex items-center">
+                                <AlertTriangle size={20} className="text-yellow-500 mr-2" />
+                                {t.detected}
+                            </div>
+                            {parsedData && (
+                                <span className="text-sm bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                                    {parsedData.idType}
+                                </span>
+                            )}
                         </h4>
 
                         {maskingRegions.length === 0 ? (
                             <p className="text-gray-400 text-sm">{t.noDetected}</p>
                         ) : (
                             <div className="space-y-3">
-                                {maskingRegions.map((region) => (
-                                    <div
-                                        key={region.id}
-                                        onClick={() => toggleRegion(region.id)}
-                                        className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedRegions.has(region.id)
+                                {parsedData ? (
+                                    // Group by Label for nicer display if needed, or just list
+                                    parsedData.fields.map((field: any) => (
+                                        <div
+                                            key={field.id}
+                                            onClick={() => toggleRegion(field.id)}
+                                            className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedRegions.has(field.id)
                                                 ? 'bg-red-500/10 border-red-500/50'
                                                 : 'bg-gray-700/50 border-gray-600 hover:bg-gray-700'
-                                            }`}
-                                    >
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="text-xs font-medium text-gray-300 uppercase tracking-wider">
-                                                {region.type}
-                                            </span>
-                                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedRegions.has(region.id)
+                                                }`}
+                                        >
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                                    {field.label}
+                                                </span>
+                                                <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedRegions.has(field.id)
                                                     ? 'bg-red-500 border-red-500'
                                                     : 'border-gray-500'
-                                                }`}>
-                                                {selectedRegions.has(region.id) && <Check size={10} className="text-white" />}
+                                                    }`}>
+                                                    {selectedRegions.has(field.id) && <Check size={10} className="text-white" />}
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-gray-200 font-mono break-all">
+                                                {field.value}
                                             </div>
                                         </div>
-                                        <div className="text-sm text-gray-200 font-mono truncate">
-                                            {region.text}
+                                    ))
+                                ) : (
+                                    // Fallback for Manual regions if any
+                                    maskingRegions.map((region) => (
+                                        <div
+                                            key={region.id}
+                                            onClick={() => toggleRegion(region.id)}
+                                            className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedRegions.has(region.id)
+                                                ? 'bg-red-500/10 border-red-500/50'
+                                                : 'bg-gray-700/50 border-gray-600 hover:bg-gray-700'
+                                                }`}
+                                        >
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                                    {region.type}
+                                                </span>
+                                                <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedRegions.has(region.id)
+                                                    ? 'bg-red-500 border-red-500'
+                                                    : 'border-gray-500'
+                                                    }`}>
+                                                    {selectedRegions.has(region.id) && <Check size={10} className="text-white" />}
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-gray-200 font-mono truncate">
+                                                {region.text}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         )}
                     </div>
-
-                    <div className="pt-4 border-t border-gray-700">
-                        <h4 className="text-sm font-medium text-gray-400 mb-2">{t.rawText}</h4>
-                        <div className="max-h-[200px] overflow-y-auto text-xs text-gray-500 font-mono bg-gray-900/50 p-2 rounded">
-                            {ocrResult?.text}
-                        </div>
-                    </div>
                 </div>
             </div>
+            {/* Raw Text for Debugging */}
+            {ocrResult && (
+                <div className="mt-6 pt-6 border-t border-gray-700">
+                    <h4 className="text-sm font-medium text-gray-400 mb-2">원본 텍스트 (디버그)</h4>
+                    <div className="bg-gray-900 p-4 rounded-lg border border-gray-700 max-h-60 overflow-y-auto text-xs font-mono text-gray-300 whitespace-pre-wrap">
+                        {ocrResult.text}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
