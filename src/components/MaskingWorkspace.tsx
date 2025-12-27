@@ -274,23 +274,21 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
     return (
         <div className="w-full max-w-6xl mx-auto">
             {/* Header / Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                 <button
                     onClick={onReset}
-                    className="flex items-center justify-center px-6 py-3 rounded-full border border-white/30 text-white hover:bg-white/10 hover:border-white/60 transition-all group"
+                    className="flex items-center justify-center px-8 py-4 rounded-full border-2 border-white/20 bg-white/5 text-white hover:bg-white/15 hover:border-white/40 transition-all group backdrop-blur-sm"
                 >
-                    <ArrowLeft size={20} className="mr-2 group-hover:-translate-x-1 transition-transform" />
-                    <span className="font-medium">{t.uploadNew}</span>
+                    <ArrowLeft size={22} className="mr-2 group-hover:-translate-x-1 transition-transform" />
+                    <span className="font-bold text-lg">{t.uploadNew}</span>
                 </button>
 
-                <div className="flex space-x-3">
-                    <button
-                        onClick={handleApplyMasking}
-                        className="px-8 py-3 text-base md:text-lg font-bold text-black bg-white hover:bg-gray-100 rounded-full transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]"
-                    >
-                        {t.apply}
-                    </button>
-                </div>
+                <button
+                    onClick={handleApplyMasking}
+                    className="px-10 py-4 text-lg md:text-xl font-black text-black bg-white hover:bg-gray-100 rounded-full transition-all transform hover:scale-105 shadow-[0_4px_25px_rgba(255,255,255,0.4)] active:scale-95"
+                >
+                    {t.apply}
+                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

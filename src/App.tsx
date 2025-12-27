@@ -96,8 +96,11 @@ function App() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-300 font-sans selection:bg-white/20">
       {/* Header */}
-      <header className="border-b border-white/10 bg-black/50 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-6 pt-16 pb-6 md:pt-12 md:pb-6 flex items-center justify-between">
+      <header
+        className="border-b border-white/10 bg-black/50 backdrop-blur-sm sticky top-0 z-20"
+        style={{ height: '45px', display: 'flex', alignItems: 'center' }}
+      >
+        <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
           <div className="flex items-center space-x-2 text-white">
             <Shield size={20} className="text-white fill-white/20" />
             <span className="font-semibold text-lg tracking-wide text-white">{t.brand}</span>
