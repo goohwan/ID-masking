@@ -53,15 +53,25 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
     const [currentPos, setCurrentPos] = useState<{ x: number, y: number } | null>(null);
     const [isDebugVisible, setIsDebugVisible] = useState(false);
 
+    const [viewMode, setViewMode] = useState<'original' | 'processed'>('original');
+
     const t = translations[lang];
 
     useEffect(() => {
         if (imageFile) {
+            // Default to showing original file initially
             const url = URL.createObjectURL(imageFile);
-            setImageUrl(url);
+            setImageUrl(url); // Initial showing
+
+            // Reset state
+            setOcrResult(null);
+            setMaskingRegions([]);
+            setSelectedRegions(new Set());
+            setParsedData(null);
+            setStatus('processing');
+            setProgress(0);
 
             const runOCR = async () => {
-                setStatus('processing');
                 try {
                     const result = await performOCR(imageFile, (p) => setProgress(p));
                     setOcrResult(result);
@@ -121,16 +131,6 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
 
                     setSelectedRegions(new Set(defaultSelected));
 
-                    if (result.processedFile) {
-                        const newUrl = URL.createObjectURL(result.processedFile);
-                        setImageUrl(newUrl);
-                        // Revoke old URL if it exists and differs from initial
-                        if (url && newUrl !== url) {
-                            // We don't revoke 'url' here immediately if it's used elsewhere, 
-                            // but in this effect flow, 'url' is the local scope one.
-                        }
-                    }
-
                     setStatus('ready');
                 } catch (error) {
                     console.error("OCR Error:", error);
@@ -145,6 +145,21 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
             };
         }
     }, [imageFile]);
+
+    // Handle view mode change
+    useEffect(() => {
+        if (!ocrResult) return;
+
+        let url = '';
+        if (viewMode === 'processed' && ocrResult.processedFile) {
+            url = URL.createObjectURL(ocrResult.processedFile);
+        } else {
+            url = URL.createObjectURL(imageFile);
+        }
+
+        setImageUrl(url);
+        return () => { if (url) URL.revokeObjectURL(url); }
+    }, [viewMode, ocrResult, imageFile]);
 
     const handleApplyMasking = async () => {
         if (!imageUrl || !ocrResult) return;
@@ -162,18 +177,49 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
         // Draw original image
         ctx.drawImage(img, 0, 0);
 
-        // Calculate Scale Factor
+        // Calculate Scale Factor and handle potential rotation swapping
         let scaleX = 1;
         let scaleY = 1;
-        if (ocrResult.imageDimensions && ocrResult.imageDimensions.width > 0 && ocrResult.imageDimensions.height > 0) {
-            scaleX = img.width / ocrResult.imageDimensions.width;
-            scaleY = img.height / ocrResult.imageDimensions.height;
+        let pX0 = 0, pY0 = 0; // Padding if needed, or origin shift
+
+        if (ocrResult.imageDimensions && ocrResult.imageDimensions.width > 0) {
+            const ocrW = ocrResult.imageDimensions.width;
+            const ocrH = ocrResult.imageDimensions.height;
+            const imgW = img.width;
+            const imgH = img.height;
+
+            // Simple heuristic to detect rotation swap (90 deg) because
+            // Tesseract might have run on a rotated version of what we are currently drawing.
+            // If aspect ratios are inverted (approx)
+            const isSwapped = (Math.abs(ocrW - imgH) < 50 && Math.abs(ocrH - imgW) < 50);
+
+            if (isSwapped && viewMode === 'original') {
+                // CRITICAL FIX: If we are viewing original (exif rotated usually) 
+                // but OCR ran on preprocessed (normalized) buffer.
+                // Tesseract coordinates (x, y) map to the Preprocessed (Rotated relative to current?).
+                // Actually, if preprocessed was 1000x2000 (Portrait) and Original is 2000x1000 (Landscape with Exif=90),
+                // The Browser displays Original as 1000x2000 (Portrait).
+                // So dimensions match! 
+                // BUT if dimensions match, `isSwapped` would be FALSE.
+
+                // If `isSwapped` is TRUE, it means:
+                // OCR Image: 1000x500
+                // Display Image: 500x1000
+                // This implies Tesseract likely rotated it internally or preprocess behaved differently.
+                // In this rare case, we just scale normally because x/y mapping is too complex to guess without OSD.
+                // We trust basic scaling:
+                scaleX = imgW / ocrW;
+                scaleY = imgH / ocrH;
+            } else {
+                scaleX = imgW / ocrW;
+                scaleY = imgH / ocrH;
+            }
         }
 
         // Apply masks
         maskingRegions.forEach(region => {
             if (selectedRegions.has(region.id)) {
-                const { x0: rX0, y0: rY0, x1: rX1, y1: rY1 } = region.bbox;
+                let { x0: rX0, y0: rY0, x1: rX1, y1: rY1 } = region.bbox;
 
                 const x0 = rX0 * scaleX;
                 const y0 = rY0 * scaleY;
@@ -300,20 +346,43 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
         <div className="w-full">
             {/* Header / Controls */}
             <div className="flex flex-wrap items-center justify-between gap-6 mb-12">
-                <button
-                    onClick={onReset}
-                    className="flex items-center gap-3 h-[60px] px-8 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all group backdrop-blur-lg"
-                >
-                    <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-                    <span className="font-bold text-lg">{t.uploadNew}</span>
-                </button>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setViewMode('original')}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${viewMode === 'original'
+                                ? 'bg-white text-black shadow-lg'
+                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            }`}
+                    >
+                        Original
+                    </button>
+                    <button
+                        onClick={() => setViewMode('processed')}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${viewMode === 'processed'
+                                ? 'bg-white text-black shadow-lg'
+                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            }`}
+                    >
+                        Analyzed B/W
+                    </button>
+                </div>
 
-                <button
-                    onClick={handleApplyMasking}
-                    className="h-[60px] px-12 rounded-2xl bg-white text-black font-black text-xl flex items-center justify-center gap-2 hover:bg-[#f0f0f0] shadow-[0_10px_40px_rgba(255,255,255,0.2)] hover:shadow-[0_15px_60px_rgba(255,255,255,0.4)] transition-all transform hover:-translate-y-1 active:scale-95"
-                >
-                    {t.apply}
-                </button>
+                <div className="flex gap-4">
+                    <button
+                        onClick={onReset}
+                        className="flex items-center gap-3 h-[60px] px-8 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all group backdrop-blur-lg"
+                    >
+                        <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
+                        <span className="font-bold text-lg">{t.uploadNew}</span>
+                    </button>
+
+                    <button
+                        onClick={handleApplyMasking}
+                        className="h-[60px] px-12 rounded-2xl bg-white text-black font-black text-xl flex items-center justify-center gap-2 hover:bg-[#f0f0f0] shadow-[0_10px_40px_rgba(255,255,255,0.2)] hover:shadow-[0_15px_60px_rgba(255,255,255,0.4)] transition-all transform hover:-translate-y-1 active:scale-95"
+                    >
+                        {t.apply}
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
