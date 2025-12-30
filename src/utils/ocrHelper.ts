@@ -21,6 +21,7 @@ export interface OCRResult {
         width: number;
         height: number;
     };
+    processedFile?: File;
 }
 
 interface PreprocessResult {
@@ -389,7 +390,8 @@ export const performOCR = async (
                 }))
             })),
             debugData: JSON.stringify(debugInfo, null, 2),
-            imageDimensions: processedDims.width > 0 ? processedDims : undefined
+            imageDimensions: processedDims.width > 0 ? processedDims : undefined,
+            processedFile: processedImage instanceof File ? processedImage : undefined
         };
     } catch (error) {
         console.error("OCR Failed:", error);

@@ -121,6 +121,16 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
 
                     setSelectedRegions(new Set(defaultSelected));
 
+                    if (result.processedFile) {
+                        const newUrl = URL.createObjectURL(result.processedFile);
+                        setImageUrl(newUrl);
+                        // Revoke old URL if it exists and differs from initial
+                        if (url && newUrl !== url) {
+                            // We don't revoke 'url' here immediately if it's used elsewhere, 
+                            // but in this effect flow, 'url' is the local scope one.
+                        }
+                    }
+
                     setStatus('ready');
                 } catch (error) {
                     console.error("OCR Error:", error);
@@ -130,7 +140,9 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
 
             runOCR();
 
-            return () => URL.revokeObjectURL(url);
+            return () => {
+                URL.revokeObjectURL(url);
+            };
         }
     }, [imageFile]);
 
