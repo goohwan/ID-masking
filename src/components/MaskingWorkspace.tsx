@@ -508,34 +508,34 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                         </h4>
 
                         {maskingRegions.length === 0 ? (
-                            <p className="text-gray-500 text-sm">{t.noDetected}</p>
+                            <p className="text-secondary text-sm">{t.noDetected}</p>
                         ) : (
                             <div className="space-y-6">
                                 {/* Sensitive Data Section */}
                                 {sensitiveList.length > 0 && (
                                     <div className="space-y-2">
-                                        <h5 className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2">Sensitive Data</h5>
+                                        <h5 className="text-xs font-bold text-info uppercase tracking-wider mb-2 border-bottom border-secondary pb-1">Sensitive Data</h5>
                                         {sensitiveList.map((field) => (
                                             <div
                                                 key={field.id}
                                                 onClick={() => toggleRegion(field.id)}
                                                 className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedRegions.has(field.id)
-                                                    ? 'bg-white/10 border-white/50'
-                                                    : 'bg-[#1a1a1a] border-white/5 hover:border-white/20'
+                                                    ? 'bg-light bg-opacity-10 border-light'
+                                                    : 'bg-dark border-secondary'
                                                     }`}
                                             >
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                                    <span className="text-xs font-bold text-light uppercase tracking-wider">
                                                         {field.type}
                                                     </span>
                                                     <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${selectedRegions.has(field.id)
-                                                        ? 'bg-blue-600 border-blue-600'
-                                                        : 'border-gray-500 hover:border-gray-300'
+                                                        ? 'bg-primary border-primary'
+                                                        : 'border-secondary'
                                                         }`}>
                                                         {selectedRegions.has(field.id) && <Check size={16} className="text-white" />}
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-gray-200 font-mono break-all ml-1">
+                                                <div className="text-sm text-white font-mono break-all ml-1">
                                                     {field.text}
                                                 </div>
                                             </div>
@@ -546,23 +546,23 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                                 {/* Manual Section */}
                                 {manualList.length > 0 && (
                                     <div className="space-y-2">
-                                        <h5 className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-2">Manual Selection</h5>
+                                        <h5 className="text-xs font-bold text-success uppercase tracking-wider mb-2 border-bottom border-secondary pb-1">Manual Selection</h5>
                                         {manualList.map((region) => (
                                             <div
                                                 key={region.id}
                                                 onClick={() => toggleRegion(region.id)}
                                                 className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedRegions.has(region.id)
-                                                    ? 'bg-white/10 border-white/50'
-                                                    : 'bg-[#1a1a1a] border-white/5 hover:border-white/20'
+                                                    ? 'bg-light bg-opacity-10 border-light'
+                                                    : 'bg-dark border-secondary'
                                                     }`}
                                             >
                                                 <div className="flex justify-between items-center mb-1">
-                                                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                                    <span className="text-xs font-bold text-light uppercase tracking-wider">
                                                         {region.type}
                                                     </span>
                                                     <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${selectedRegions.has(region.id)
-                                                        ? 'bg-blue-600 border-blue-600'
-                                                        : 'border-gray-500 hover:border-gray-300'
+                                                        ? 'bg-primary border-primary'
+                                                        : 'border-secondary'
                                                         }`}>
                                                         {selectedRegions.has(region.id) && <Check size={16} className="text-white" />}
                                                     </div>
@@ -574,24 +574,24 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
 
                                 {/* Other Text Section */}
                                 {textList.length > 0 && (
-                                    <div className="space-y-2 opacity-80 hover:opacity-100 transition-opacity">
-                                        <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Other Detected Text</h5>
+                                    <div className="space-y-2">
+                                        <h5 className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 border-bottom border-secondary pb-1">Other Detected Text</h5>
                                         {textList.map((field) => (
                                             <div
                                                 key={field.id}
                                                 onClick={() => toggleRegion(field.id)}
                                                 className={`p-2 rounded border cursor-pointer transition-all ${selectedRegions.has(field.id)
-                                                    ? 'bg-white/10 border-white/50'
-                                                    : 'bg-[#1a1a1a] border-white/5 hover:border-white/20'
+                                                    ? 'bg-light bg-opacity-10 border-light'
+                                                    : 'bg-dark border-secondary'
                                                     }`}
                                             >
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-xs text-gray-400 truncate flex-1 mr-2">
+                                                    <span className="text-xs text-light truncate flex-1 mr-2">
                                                         {field.text}
                                                     </span>
                                                     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRegions.has(field.id)
-                                                        ? 'bg-blue-600 border-blue-600'
-                                                        : 'border-gray-600'
+                                                        ? 'bg-primary border-primary'
+                                                        : 'border-secondary'
                                                         }`}>
                                                         {selectedRegions.has(field.id) && <Check size={10} className="text-white" />}
                                                     </div>
