@@ -149,12 +149,23 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
         // Draw original image
         ctx.drawImage(img, 0, 0);
 
+        // Calculate Scale Factor
+        let scaleX = 1;
+        let scaleY = 1;
+        if (ocrResult.imageDimensions && ocrResult.imageDimensions.width > 0 && ocrResult.imageDimensions.height > 0) {
+            scaleX = img.width / ocrResult.imageDimensions.width;
+            scaleY = img.height / ocrResult.imageDimensions.height;
+        }
+
         // Apply masks
         maskingRegions.forEach(region => {
             if (selectedRegions.has(region.id)) {
-                const { x0, y0, x1, y1 } = region.bbox;
-                const width = x1 - x0;
-                const height = y1 - y0;
+                const { x0: rX0, y0: rY0, x1: rX1, y1: rY1 } = region.bbox;
+
+                const x0 = rX0 * scaleX;
+                const y0 = rY0 * scaleY;
+                const width = (rX1 - rX0) * scaleX;
+                const height = (rY1 - rY0) * scaleY;
 
                 // Fill with solid color (e.g., black or gray)
                 ctx.fillStyle = '#000000';
@@ -204,7 +215,8 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
     };
 
     const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!isDrawing || !startPos || !currentPos || !naturalDimensions) return;
+        const refDims = ocrResult?.imageDimensions || naturalDimensions;
+        if (!isDrawing || !startPos || !currentPos || !refDims) return;
 
         // Use the event target to get the image/container dimensions
         // The handler is on the CONTAINER div (className="relative inline-block...")
@@ -215,8 +227,8 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
 
         const renderedWidth = rect.width;
         const renderedHeight = rect.height;
-        const scaleX = naturalDimensions.width / renderedWidth;
-        const scaleY = naturalDimensions.height / renderedHeight;
+        const scaleX = refDims.width / renderedWidth;
+        const scaleY = refDims.height / renderedHeight;
 
         // Calculate bbox in screen coords relative to top-left of container
         const screenX0 = Math.min(startPos.x, currentPos.x);
@@ -272,20 +284,20 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
     const textList = maskingRegions.filter(r => r.type === 'Text');
 
     return (
-        <div className="w-full max-w-6xl mx-auto">
+        <div className="w-full">
             {/* Header / Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <div className="flex flex-wrap items-center justify-between gap-6 mb-12">
                 <button
                     onClick={onReset}
-                    className="flex items-center justify-center px-8 py-4 rounded-full border-2 border-white/20 bg-white/5 text-white hover:bg-white/15 hover:border-white/40 transition-all group backdrop-blur-sm"
+                    className="flex items-center gap-3 h-[60px] px-8 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all group backdrop-blur-lg"
                 >
-                    <ArrowLeft size={22} className="mr-2 group-hover:-translate-x-1 transition-transform" />
+                    <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
                     <span className="font-bold text-lg">{t.uploadNew}</span>
                 </button>
 
                 <button
                     onClick={handleApplyMasking}
-                    className="px-10 py-4 text-lg md:text-xl font-black text-black bg-white hover:bg-gray-100 rounded-full transition-all transform hover:scale-105 shadow-[0_4px_25px_rgba(255,255,255,0.4)] active:scale-95"
+                    className="h-[60px] px-12 rounded-2xl bg-white text-black font-black text-xl flex items-center justify-center gap-2 hover:bg-[#f0f0f0] shadow-[0_10px_40px_rgba(255,255,255,0.2)] hover:shadow-[0_15px_60px_rgba(255,255,255,0.4)] transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                     {t.apply}
                 </button>
@@ -321,10 +333,12 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                             {maskingRegions.map((region) => {
                                 const isSelected = selectedRegions.has(region.id);
 
-                                // Calculate percentages if natural dimensions available
+                                // Calculate percentages using OCR reference dimensions if available
                                 let style: React.CSSProperties = {};
-                                if (naturalDimensions) {
-                                    const { width, height } = naturalDimensions;
+                                const refDims = ocrResult?.imageDimensions || naturalDimensions;
+
+                                if (refDims) {
+                                    const { width, height } = refDims;
                                     style = {
                                         left: `${(region.bbox.x0 / width) * 100}%`,
                                         top: `${(region.bbox.y0 / height) * 100}%`,

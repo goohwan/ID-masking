@@ -22,3 +22,15 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+.responsive-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 95%;
+}
+
+@media (min-width: 451px) {
+  .responsive-container {
+    width: 85%;
+  }
+}

@@ -100,7 +100,7 @@ function App() {
         className="border-b border-white/10 bg-black/50 backdrop-blur-sm sticky top-0 z-20"
         style={{ height: '45px', display: 'flex', alignItems: 'center' }}
       >
-        <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
+        <div className="responsive-container px-6 w-full flex items-center justify-between">
           <div className="flex items-center space-x-2 text-white">
             <Shield size={20} className="text-white fill-white/20" />
             <span className="font-semibold text-lg tracking-wide text-white">{t.brand}</span>
@@ -122,21 +122,21 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex flex-col items-center justify-center p-6 min-h-[calc(100vh-3.5rem)] relative overflow-hidden">
+      <main className="flex flex-col items-center justify-center py-12 px-2 min-h-[calc(100vh-3.5rem)] relative overflow-hidden">
 
         {/* Background Ambient Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/5 rounded-full blur-[100px] pointer-events-none"></div>
 
         {/* Text Description */}
         {!imageFile && (
-          <p className="text-gray-400 text-sm mb-12 text-center max-w-2xl leading-relaxed">
+          <p className="responsive-container text-gray-400 text-sm mb-12 text-center leading-relaxed">
             {t.desc}
           </p>
         )}
 
         {!imageFile ? (
           /* Main Glowing Card */
-          <div className="w-full max-w-4xl relative group">
+          <div className="responsive-container relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/20 rounded-3xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-1000"></div>
             <div className="relative bg-[#111] rounded-3xl p-8 shadow-[0_0_50px_-12px_rgba(255,255,255,0.15)] flex flex-col">
 
@@ -201,7 +201,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="w-full animate-in fade-in zoom-in-95 duration-300">
+          <div className="responsive-container animate-in fade-in zoom-in-95 duration-300">
             <MaskingWorkspace
               imageFile={imageFile}
               onReset={() => setImageFile(null)}

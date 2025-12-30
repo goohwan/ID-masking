@@ -17,10 +17,20 @@ export interface OCRResult {
         }[];
     }[];
     debugData?: string;
+    imageDimensions?: {
+        width: number;
+        height: number;
+    };
 }
 
-// Helper to preprocess image (Grayscale + High Contrast) -> Returns a new File object
-const preprocessImage = (imageFile: File): Promise<File> => {
+interface PreprocessResult {
+    file: File;
+    width: number;
+    height: number;
+}
+
+// Helper to preprocess image (Grayscale + High Contrast) -> Returns a new File object + Dimensions
+const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
     return new Promise((resolve, _reject) => {
         const img = new Image();
         const url = URL.createObjectURL(imageFile);
@@ -29,8 +39,12 @@ const preprocessImage = (imageFile: File): Promise<File> => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (!ctx) {
-                // If context fails, return original file
-                resolve(imageFile);
+                // If context fails, return original file with estimated dims
+                resolve({
+                    file: imageFile,
+                    width: img.width,
+                    height: img.height
+                });
                 return;
             }
             canvas.width = img.width;
@@ -64,10 +78,18 @@ const preprocessImage = (imageFile: File): Promise<File> => {
             canvas.toBlob((blob) => {
                 if (blob) {
                     const newFile = new File([blob], "preprocessed.jpg", { type: "image/jpeg" });
-                    console.log("[preprocessImage] Converted to Blob File:", newFile.size);
-                    resolve(newFile);
+                    console.log("[preprocessImage] Converted to Blob File:", newFile.size, `(${canvas.width}x${canvas.height})`);
+                    resolve({
+                        file: newFile,
+                        width: canvas.width,
+                        height: canvas.height
+                    });
                 } else {
-                    resolve(imageFile);
+                    resolve({
+                        file: imageFile,
+                        width: img.width,
+                        height: img.height
+                    });
                 }
             }, 'image/jpeg', 0.9);
 
@@ -75,18 +97,19 @@ const preprocessImage = (imageFile: File): Promise<File> => {
         };
         img.onerror = (e) => {
             console.error("Image load error:", e);
-            resolve(imageFile);
+            // We can't easily get dims if load fails, but we have to return something
+            resolve({ file: imageFile, width: 0, height: 0 });
         };
         img.src = url;
     });
 };
 
-const preprocessWithTimeout = async (file: File): Promise<File> => {
+const preprocessWithTimeout = async (file: File): Promise<PreprocessResult> => {
     let timeoutId: any;
-    const timeout = new Promise<File>((resolve) => {
+    const timeout = new Promise<PreprocessResult>((resolve) => {
         timeoutId = setTimeout(() => {
             console.warn("Preprocessing timed out (15s), using original file");
-            resolve(file);
+            resolve({ file, width: 0, height: 0 }); // 0 implies unknown
         }, 15000);
     });
 
@@ -96,7 +119,7 @@ const preprocessWithTimeout = async (file: File): Promise<File> => {
     }).catch(err => {
         clearTimeout(timeoutId);
         console.error("Preprocessing error:", err);
-        return file;
+        return { file, width: 0, height: 0 };
     });
 
     return Promise.race([safeProcess, timeout]);
@@ -250,8 +273,12 @@ export const performOCR = async (
         });
 
         let processedImage: File | string = image;
+        let processedDims = { width: 0, height: 0 };
+
         if (image instanceof File) {
-            processedImage = await preprocessWithTimeout(image);
+            const pResult = await preprocessWithTimeout(image);
+            processedImage = pResult.file;
+            processedDims = { width: pResult.width, height: pResult.height };
         }
 
         console.log("[performOCR] Recognizing...");
@@ -282,6 +309,7 @@ export const performOCR = async (
             unlvSnippet: (data as any).unlv ? (data as any).unlv.substring(0, 200) + "..." : "N/A",
             // key list last
             keys: debugKeys,
+            dims: processedDims
         };
 
 
@@ -360,7 +388,8 @@ export const performOCR = async (
                     confidence: w.confidence
                 }))
             })),
-            debugData: JSON.stringify(debugInfo, null, 2)
+            debugData: JSON.stringify(debugInfo, null, 2),
+            imageDimensions: processedDims.width > 0 ? processedDims : undefined
         };
     } catch (error) {
         console.error("OCR Failed:", error);
