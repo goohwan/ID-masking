@@ -97,7 +97,7 @@ function App() {
     <div className="min-h-screen bg-[#0a0a0a] text-gray-300 font-sans selection:bg-white/20">
       {/* Header */}
       <header
-        className="border-b border-white/10 bg-black/50 backdrop-blur-sm sticky top-0 z-20"
+        className="border-b border-white/10 bg-[#0a0a0a] sticky top-0 z-50"
         style={{ height: '45px', display: 'flex', alignItems: 'center' }}
       >
         <div className="responsive-container px-6 w-full flex items-center justify-between">
