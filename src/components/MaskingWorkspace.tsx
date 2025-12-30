@@ -346,40 +346,44 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
     return (
         <div className="w-full">
             {/* Header / Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-6 mb-12">
-                <div className="flex items-center gap-4">
+            {/* Control Bar */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8 sticky top-4 z-40 bg-[#121212]/90 backdrop-blur-md p-4 rounded-2xl border border-white/5 shadow-xl">
+
+                {/* View Mode Toggle */}
+                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 self-center md:self-auto">
                     <button
                         onClick={() => setViewMode('original')}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${viewMode === 'original'
-                            ? 'bg-white text-black shadow-lg'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        className={`px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${viewMode === 'original'
+                                ? 'bg-white text-black shadow-lg'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
                     >
                         Original
                     </button>
                     <button
                         onClick={() => setViewMode('processed')}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${viewMode === 'processed'
-                            ? 'bg-white text-black shadow-lg'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        className={`px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${viewMode === 'processed'
+                                ? 'bg-white text-black shadow-lg'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
                     >
                         Analyzed B/W
                     </button>
                 </div>
 
-                <div className="flex gap-4">
+                {/* Action Buttons */}
+                <div className="flex gap-2 w-full md:w-auto">
                     <button
                         onClick={onReset}
-                        className="flex items-center gap-3 h-[60px] px-8 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all group backdrop-blur-lg"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 h-12 px-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all group"
                     >
-                        <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-                        <span className="font-bold text-lg">{t.uploadNew}</span>
+                        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                        <span className="font-semibold text-sm">{t.uploadNew}</span>
                     </button>
 
                     <button
                         onClick={handleApplyMasking}
-                        className="h-[60px] px-12 rounded-2xl bg-white text-black font-black text-xl flex items-center justify-center gap-2 hover:bg-[#f0f0f0] shadow-[0_10px_40px_rgba(255,255,255,0.2)] hover:shadow-[0_15px_60px_rgba(255,255,255,0.4)] transition-all transform hover:-translate-y-1 active:scale-95"
+                        className="flex-[2] md:flex-none h-12 px-8 rounded-xl bg-white text-black font-bold text-sm md:text-base flex items-center justify-center gap-2 hover:bg-[#f2f2f2] transition-all transform hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-white/10"
                     >
                         {t.apply}
                     </button>
