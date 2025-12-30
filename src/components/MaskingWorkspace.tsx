@@ -352,38 +352,43 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
             {/* Header / Controls */}
             {/* Premium Control Bar */}
             {/* Accessible Control Bar */}
-            <div className="flex flex-col gap-4 mb-8 sticky top-4 z-50 bg-[#121212] p-4 rounded-3xl border border-white/10 shadow-2xl">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {/* Accessible Control Bar - BIG & SPACIOUS */}
+            <div className="flex flex-col gap-6 mb-10 sticky top-2 z-50 bg-[#121212] p-4 rounded-3xl border border-white/20 shadow-2xl">
 
-                    {/* 1. Upload New (Large Touch Target) */}
+                {/* Row 1: Navigation & View Options */}
+                <div className="flex gap-4 h-16">
+                    {/* 1. Reset / Upload New */}
                     <button
                         onClick={onReset}
-                        className="col-span-1 h-14 rounded-2xl bg-[#2a2a2a] border border-white/5 hover:bg-[#333] active:bg-[#444] text-gray-200 font-bold text-base flex items-center justify-center gap-2 transition-colors shadow-md"
+                        className="flex-1 bg-[#2a2a2a] border-2 border-white/10 rounded-2xl text-gray-200 hover:bg-[#333] hover:text-white active:bg-[#444] transition-colors flex items-center justify-center gap-2"
+                        style={{ height: '70px' }} // Explicit height enforcement
                     >
-                        <ArrowLeft size={20} />
-                        <span>{t.uploadNew}</span>
+                        <ArrowLeft size={24} />
+                        <span className="font-bold text-lg">{t.uploadNew}</span>
                     </button>
 
-                    {/* 2. View Mode Toggle (Single Button, Large) */}
+                    {/* 2. View Mode Toggle */}
                     <button
                         onClick={() => setViewMode(viewMode === 'original' ? 'processed' : 'original')}
-                        className={`col-span-1 h-14 rounded-2xl border font-bold text-base flex items-center justify-center gap-2 transition-all shadow-md ${viewMode === 'original'
-                                ? 'bg-[#2a2a2a] border-green-500/50 text-white'
-                                : 'bg-[#2a2a2a] border-blue-500/50 text-white'
+                        className={`flex-1 border-2 rounded-2xl flex items-center justify-center gap-2 transition-all ${viewMode === 'original'
+                                ? 'bg-[#222] border-green-500 text-green-400'
+                                : 'bg-[#222] border-blue-500 text-blue-400'
                             }`}
+                        style={{ height: '70px' }} // Explicit height enforcement
                     >
-                        <div className={`w-3 h-3 rounded-full ${viewMode === 'original' ? 'bg-green-500' : 'bg-blue-500'}`} />
-                        <span>{viewMode === 'original' ? t.viewOriginal : t.viewProcessed}</span>
-                    </button>
-
-                    {/* 3. Apply Action (Full Width on Mobile, Primary on PC) */}
-                    <button
-                        onClick={handleApplyMasking}
-                        className="col-span-2 md:col-span-1 h-14 rounded-2xl bg-white text-black font-black text-lg hover:bg-gray-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
-                    >
-                        {t.apply}
+                        <div className={`w-4 h-4 rounded-full ${viewMode === 'original' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                        <span className="font-bold text-lg">{viewMode === 'original' ? t.viewOriginal : t.viewProcessed}</span>
                     </button>
                 </div>
+
+                {/* Row 2: Primary Action (Apply) - Separated by gap-6 */}
+                <button
+                    onClick={handleApplyMasking}
+                    className="w-full bg-white text-black rounded-2xl font-black text-2xl hover:bg-gray-200 active:scale-[0.98] transition-transform shadow-[0_4px_20px_rgba(255,255,255,0.25)] flex items-center justify-center uppercase tracking-wider"
+                    style={{ height: '80px' }} // Extra large height for primary action
+                >
+                    {t.apply}
+                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
