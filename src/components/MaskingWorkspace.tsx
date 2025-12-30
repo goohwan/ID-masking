@@ -351,54 +351,37 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
         <div className="w-full">
             {/* Header / Controls */}
             {/* Premium Control Bar */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 sticky top-6 z-50 p-1">
+            {/* Accessible Control Bar */}
+            <div className="flex flex-col gap-4 mb-8 sticky top-4 z-50 bg-[#121212] p-4 rounded-3xl border border-white/10 shadow-2xl">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 
-                {/* Glassmorphic Container for Controls */}
-                <div className="w-full md:w-auto p-1.5 bg-[#1a1a1a]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center relative overflow-hidden">
-                    {/* View Mode Segmented Control */}
-                    <div className="relative flex w-full md:w-auto bg-black/50 rounded-xl p-1 border border-white/5">
-                        {/* Sliding Background (Animated) */}
-                        <div
-                            className={`absolute top-1 bottom-1 rounded-lg bg-zinc-800 border border-white/10 shadow-sm transition-all duration-300 ease-spring ${viewMode === 'original' ? 'left-1 w-[calc(50%-4px)]' : 'left-[50%] w-[calc(50%-4px)]'
-                                }`}
-                        />
-
-                        <button
-                            onClick={() => setViewMode('original')}
-                            className={`relative flex-1 md:flex-none md:w-36 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors z-10 ${viewMode === 'original' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
-                                }`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full transition-colors ${viewMode === 'original' ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-transparent'}`} />
-                            {t.viewOriginal}
-                        </button>
-
-                        <button
-                            onClick={() => setViewMode('processed')}
-                            className={`relative flex-1 md:flex-none md:w-40 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors z-10 ${viewMode === 'processed' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
-                                }`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full transition-colors ${viewMode === 'processed' ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'bg-transparent'}`} />
-                            {t.viewProcessed}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Action Buttons Group */}
-                <div className="w-full md:w-auto flex gap-3">
+                    {/* 1. Upload New (Large Touch Target) */}
                     <button
                         onClick={onReset}
-                        className="flex-1 md:flex-none h-12 px-6 rounded-2xl border border-white/10 bg-[#1a1a1a]/80 backdrop-blur-md hover:bg-white/5 active:bg-white/10 text-gray-400 hover:text-white transition-all duration-200 flex items-center justify-center gap-2 group shadow-lg"
+                        className="col-span-1 h-14 rounded-2xl bg-[#2a2a2a] border border-white/5 hover:bg-[#333] active:bg-[#444] text-gray-200 font-bold text-base flex items-center justify-center gap-2 transition-colors shadow-md"
                     >
-                        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform duration-300 text-gray-500 group-hover:text-white" />
-                        <span className="font-semibold text-sm tracking-wide">{t.uploadNew}</span>
+                        <ArrowLeft size={20} />
+                        <span>{t.uploadNew}</span>
                     </button>
 
+                    {/* 2. View Mode Toggle (Single Button, Large) */}
+                    <button
+                        onClick={() => setViewMode(viewMode === 'original' ? 'processed' : 'original')}
+                        className={`col-span-1 h-14 rounded-2xl border font-bold text-base flex items-center justify-center gap-2 transition-all shadow-md ${viewMode === 'original'
+                                ? 'bg-[#2a2a2a] border-green-500/50 text-white'
+                                : 'bg-[#2a2a2a] border-blue-500/50 text-white'
+                            }`}
+                    >
+                        <div className={`w-3 h-3 rounded-full ${viewMode === 'original' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                        <span>{viewMode === 'original' ? t.viewOriginal : t.viewProcessed}</span>
+                    </button>
+
+                    {/* 3. Apply Action (Full Width on Mobile, Primary on PC) */}
                     <button
                         onClick={handleApplyMasking}
-                        className="flex-[2] md:flex-none h-12 px-8 rounded-2xl bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black font-bold text-sm md:text-base flex items-center justify-center gap-2.5 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 tracking-wide border border-white/50"
+                        className="col-span-2 md:col-span-1 h-14 rounded-2xl bg-white text-black font-black text-lg hover:bg-gray-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
                     >
-                        <span>{t.apply}</span>
-                        <div className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                        {t.apply}
                     </button>
                 </div>
             </div>
