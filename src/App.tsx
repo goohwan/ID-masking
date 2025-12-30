@@ -106,14 +106,14 @@ function App() {
             <span className="font-semibold text-lg tracking-wide text-white">{t.brand}</span>
           </div>
 
-          <div className="flex items-center space-x-4 text-xs font-medium text-gray-400">
+          <div className="flex items-center space-x-4 text-xs font-medium text-gray-300">
             <div className="flex items-center space-x-1">
-              <Globe size={14} />
+              <Globe size={14} className="text-gray-300" />
               <span>{t.locales}</span>
             </div>
             <button
               onClick={toggleLanguage}
-              className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded-full transition-colors"
+              className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded-full transition-colors border border-gray-600"
             >
               {t.language}
             </button>
@@ -129,7 +129,7 @@ function App() {
 
         {/* Text Description */}
         {!imageFile && (
-          <p className="responsive-container text-gray-400 text-sm mb-12 text-center leading-relaxed">
+          <p className="responsive-container text-gray-300 text-base mb-12 text-center leading-relaxed font-light tracking-wide">
             {t.desc}
           </p>
         )}
@@ -138,7 +138,7 @@ function App() {
           /* Main Glowing Card */
           <div className="responsive-container relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/20 rounded-3xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-1000"></div>
-            <div className="relative bg-[#111] rounded-3xl p-8 shadow-[0_0_50px_-12px_rgba(255,255,255,0.15)] flex flex-col">
+            <div className="relative bg-[#111] rounded-3xl p-8 shadow-[0_0_50px_-12px_rgba(255,255,255,0.15)] flex flex-col border border-white/10">
 
               <h2 className="text-xl text-white font-medium mb-8 pl-1">{t.step1}</h2>
 
@@ -155,7 +155,7 @@ function App() {
                     border border-dashed rounded-xl flex flex-col items-center justify-center p-6 cursor-pointer transition-all duration-300
                     ${dragActive
                       ? 'border-white bg-white/10'
-                      : 'border-white/20 bg-[#161616] hover:bg-[#1a1a1a] hover:border-white/40'
+                      : 'border-white/30 bg-[#161616] hover:bg-[#1a1a1a] hover:border-white/60 hover:shadow-lg hover:shadow-white/5'
                     }
                   `}
                 >
@@ -166,7 +166,7 @@ function App() {
                     <CloudUpload size={40} className="text-white relative z-10" />
                   </div>
 
-                  <p className="text-gray-400 text-sm font-medium">
+                  <p className="text-gray-200 text-base font-medium text-center">
                     {t.dropText}
                   </p>
                 </div>
@@ -183,13 +183,13 @@ function App() {
               {/* Footer Buttons */}
               <div className="flex flex-col md:flex-row items-center justify-between mt-8 pt-4">
                 <div className="flex space-x-2">
-                  <span className="px-3 py-1 bg-[#222] text-xs text-gray-500 rounded">
+                  <span className="px-3 py-1 bg-[#222] text-xs text-gray-300 border border-white/10 rounded">
                     {t.formats.join(', ')}
                   </span>
                 </div>
 
                 <div className="mt-4 md:mt-0">
-                  <button className="flex items-center space-x-2 px-5 py-2 rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors">
+                  <button className="flex items-center space-x-2 px-5 py-2 rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors bg-white/5">
                     <span>{t.copyBtn}</span>
                     <div className="bg-white/20 rounded-full p-0.5">
                       <Check size={12} className="text-white" />
