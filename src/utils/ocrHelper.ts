@@ -244,23 +244,40 @@ export const performOCR = async (
     try {
         console.log("[performOCR] Starting Tesseract v5 (Downgraded)...");
 
-        // Debug: Check if traineddata file is actually accessible
-        const checkUrlEng = '/ID-masking/tesseract/eng.traineddata';
+        // Check if traineddata file is actually accessible (Correct Path)
+        // With custom domain at root, path is just /tesseract/...
+        const checkUrlEng = '/tesseract/eng.traineddata';
 
         try {
             const resp = await fetch(checkUrlEng, { method: 'HEAD' });
             console.log(`[performOCR] Eng check: ${checkUrlEng} -> ${resp.status}`);
         } catch (e) { console.error(e); }
 
-        // 1. Create worker (v5 style) - Default CDN
-        // Reverting to defaults to fix 'x.map' crash.
-        const worker: any = await Tesseract.createWorker();
+        // 1. Create worker with LOCAL PATH configuration to ensure correct files are used
+        const worker: any = await Tesseract.createWorker('kor+eng', 1, {
+            langPath: '/tesseract',
+            corePath: '/tesseract/tesseract-core.wasm.js',
+            workerPath: '/tesseract/worker.min.js',
+            logger: m => console.log(m),
+            gzip: false // We have uncompressed files or let browser handle it
+        });
 
-        // 2. Load Language & Initialize (Required in v5)
-        console.log("[performOCR] Loading language 'kor+eng'...");
-        await worker.loadLanguage('kor+eng');
-        console.log("[performOCR] Initializing 'kor+eng'...");
-        await worker.initialize('kor+eng');
+        // Note: createWorker('kor+eng', 1, ...) in v5 does load/init automatically.
+        // We don't need manual loadLanguage/initialize unless we want granular control or it fails.
+        // But since we are specifying paths, let's keep it clean.
+
+        // If the above constructor pattern is strict v5, we don't need explicit load/init lines below.
+        // However, to be safe with "Downgraded" comments, let's stick to the options object pattern if possible 
+        // or just let the constructor do it.
+
+        // The previous code had manual steps. Let's comment them out if we pass args to createWorker.
+        // OR use the empty createWorker and setup paths?
+        // Let's try the modern v5 one-liner with options which is cleanest.
+
+        // console.log("[performOCR] Loading language 'kor+eng'...");
+        // await worker.loadLanguage('kor+eng');
+        // console.log("[performOCR] Initializing 'kor+eng'...");
+        // await worker.initialize('kor+eng');
 
         // 3. Set parameters (Restore structure requests)
         console.log("[performOCR] Setting parameters for structure...");
