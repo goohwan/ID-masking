@@ -180,7 +180,8 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
         // Calculate Scale Factor and handle potential rotation swapping
         let scaleX = 1;
         let scaleY = 1;
-        let pX0 = 0, pY0 = 0; // Padding if needed, or origin shift
+        // Padding if needed, or origin shift (currently unused but kept for structure)
+        // let pX0 = 0, pY0 = 0;
 
         if (ocrResult.imageDimensions && ocrResult.imageDimensions.width > 0) {
             const ocrW = ocrResult.imageDimensions.width;
@@ -350,8 +351,8 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                     <button
                         onClick={() => setViewMode('original')}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${viewMode === 'original'
-                                ? 'bg-white text-black shadow-lg'
-                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            ? 'bg-white text-black shadow-lg'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
                             }`}
                     >
                         Original
@@ -359,8 +360,8 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                     <button
                         onClick={() => setViewMode('processed')}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${viewMode === 'processed'
-                                ? 'bg-white text-black shadow-lg'
-                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            ? 'bg-white text-black shadow-lg'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
                             }`}
                     >
                         Analyzed B/W
