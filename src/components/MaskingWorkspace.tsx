@@ -353,42 +353,51 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
             {/* Premium Control Bar */}
             {/* Accessible Control Bar */}
             {/* Accessible Control Bar - BIG & SPACIOUS */}
-            <div className="flex flex-col gap-6 mb-10 sticky top-2 z-50 bg-[#121212] p-4 rounded-3xl border border-white/20 shadow-2xl">
+            {/* Bootstrap Control Bar */}
+            <div className="container-fluid space-y-4 mb-5 p-3 bg-dark rounded-3 shadow sticky-top" style={{ top: '10px', zIndex: 1050 }}>
+                {/* Row 1: Nav & Toggle */}
+                <div className="row g-3">
+                    {/* Reset Button */}
+                    <div className="col-12 col-md-6">
+                        <button
+                            onClick={onReset}
+                            className="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2"
+                            style={{ height: '70px', fontSize: '1.2rem', fontWeight: 'bold' }}
+                        >
+                            <ArrowLeft size={24} />
+                            {t.uploadNew}
+                        </button>
+                    </div>
 
-                {/* Row 1: Navigation & View Options */}
-                <div className="flex gap-4 h-16">
-                    {/* 1. Reset / Upload New */}
-                    <button
-                        onClick={onReset}
-                        className="flex-1 bg-[#2a2a2a] border-2 border-white/10 rounded-2xl text-gray-200 hover:bg-[#333] hover:text-white active:bg-[#444] transition-colors flex items-center justify-center gap-2"
-                        style={{ height: '70px' }} // Explicit height enforcement
-                    >
-                        <ArrowLeft size={24} />
-                        <span className="font-bold text-lg">{t.uploadNew}</span>
-                    </button>
-
-                    {/* 2. View Mode Toggle */}
-                    <button
-                        onClick={() => setViewMode(viewMode === 'original' ? 'processed' : 'original')}
-                        className={`flex-1 border-2 rounded-2xl flex items-center justify-center gap-2 transition-all ${viewMode === 'original'
-                                ? 'bg-[#222] border-green-500 text-green-400'
-                                : 'bg-[#222] border-blue-500 text-blue-400'
-                            }`}
-                        style={{ height: '70px' }} // Explicit height enforcement
-                    >
-                        <div className={`w-4 h-4 rounded-full ${viewMode === 'original' ? 'bg-green-500' : 'bg-blue-500'}`} />
-                        <span className="font-bold text-lg">{viewMode === 'original' ? t.viewOriginal : t.viewProcessed}</span>
-                    </button>
+                    {/* View Mode Toggle Button */}
+                    <div className="col-12 col-md-6">
+                        <button
+                            onClick={() => setViewMode(viewMode === 'original' ? 'processed' : 'original')}
+                            className={`btn w-100 d-flex align-items-center justify-content-center gap-2 ${viewMode === 'original' ? 'btn-success' : 'btn-primary'
+                                }`}
+                            style={{ height: '70px', fontSize: '1.2rem', fontWeight: 'bold' }}
+                        >
+                            <div
+                                className="rounded-circle bg-white"
+                                style={{ width: '12px', height: '12px', opacity: 0.8 }}
+                            />
+                            {viewMode === 'original' ? t.viewOriginal : t.viewProcessed}
+                        </button>
+                    </div>
                 </div>
 
-                {/* Row 2: Primary Action (Apply) - Separated by gap-6 */}
-                <button
-                    onClick={handleApplyMasking}
-                    className="w-full bg-white text-black rounded-2xl font-black text-2xl hover:bg-gray-200 active:scale-[0.98] transition-transform shadow-[0_4px_20px_rgba(255,255,255,0.25)] flex items-center justify-center uppercase tracking-wider"
-                    style={{ height: '80px' }} // Extra large height for primary action
-                >
-                    {t.apply}
-                </button>
+                {/* Row 2: Apply Button (Full Width, Distinct Gap) */}
+                <div className="row mt-3">
+                    <div className="col-12">
+                        <button
+                            onClick={handleApplyMasking}
+                            className="btn btn-light w-100 text-uppercase fw-bold shadow"
+                            style={{ height: '80px', fontSize: '1.5rem', letterSpacing: '2px' }}
+                        >
+                            {t.apply}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
