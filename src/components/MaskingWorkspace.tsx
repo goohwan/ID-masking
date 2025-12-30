@@ -51,6 +51,7 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPos, setStartPos] = useState<{ x: number, y: number } | null>(null);
     const [currentPos, setCurrentPos] = useState<{ x: number, y: number } | null>(null);
+    const [isDebugVisible, setIsDebugVisible] = useState(false);
 
     const t = translations[lang];
 
@@ -508,20 +509,43 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                     </div>
                 </div>
             </div>
+
+
             {/* Raw Text for Debugging */}
             {ocrResult && (
-                <div className="mt-8 pt-8 border-t border-white/10 opacity-50 hover:opacity-100 transition-opacity">
-                    <h4 className="text-xs font-medium text-gray-500 mb-4">{t.rawText}</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-black/50 p-4 rounded-lg border border-white/5 max-h-40 overflow-y-auto text-[10px] font-mono text-gray-500 whitespace-pre-wrap">
-                            {ocrResult.text}
-                        </div>
-                        {parsedData && parsedData.logs && (
+                <div className="mt-8 pt-8 border-t border-white/10 transition-opacity">
+                    <button
+                        onClick={() => setIsDebugVisible(!isDebugVisible)}
+                        className="flex items-center gap-2 text-xs font-medium text-gray-500 mb-4 hover:text-white transition-colors"
+                    >
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={`transition-transform duration-200 ${isDebugVisible ? 'rotate-90' : ''}`}
+                        >
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                        {t.rawText}
+                    </button>
+
+                    {isDebugVisible && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="bg-black/50 p-4 rounded-lg border border-white/5 max-h-40 overflow-y-auto text-[10px] font-mono text-gray-500 whitespace-pre-wrap">
-                                {parsedData.logs.join('\n')}
+                                {ocrResult.text}
                             </div>
-                        )}
-                    </div>
+                            {parsedData && parsedData.logs && (
+                                <div className="bg-black/50 p-4 rounded-lg border border-white/5 max-h-40 overflow-y-auto text-[10px] font-mono text-gray-500 whitespace-pre-wrap">
+                                    {parsedData.logs.join('\n')}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
