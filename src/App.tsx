@@ -9,7 +9,7 @@ const translations = {
   ko: {
     brand: 'PrivacyGuard',
     language: 'English',
-    locales: '로컬 데이터 & 세 제 지능', // Matching the text in top right of mockup somewhat
+    locales: '로컬데이터 & 보안지능', // Matching the text in top right of mockup somewhat
     desc: '로컬 OCR 기술을 사용하여 신분증의 민감한 정보를 자동으로 가려줍니다. 데이터는 브라우저를 벗어나지 않습니다.',
     step1: '1. 신분증 이미지 업로드',
     dropText: '이미지를 드래그 앤 드롭하거나 클릭하여 업로드하세요.',
@@ -106,9 +106,10 @@ function App() {
             <span className="font-semibold text-lg tracking-wide text-white">{t.brand}</span>
           </div>
 
-          <div className="flex items-center space-x-4 text-xs font-medium text-gray-300">
+
+          <div className="flex items-center space-x-4 text-xs font-medium text-light">
             <div className="flex items-center space-x-1">
-              <Globe size={14} className="text-gray-300" />
+              <Globe size={14} className="text-light" />
               <span>{t.locales}</span>
             </div>
             <button
@@ -129,7 +130,7 @@ function App() {
 
         {/* Text Description */}
         {!imageFile && (
-          <p className="responsive-container text-gray-300 text-base mb-12 text-center leading-relaxed font-light tracking-wide">
+          <p className="responsive-container text-white text-base mb-12 text-center leading-relaxed font-light tracking-wide opacity-90">
             {t.desc}
           </p>
         )}
@@ -138,7 +139,7 @@ function App() {
           /* Main Glowing Card */
           <div className="responsive-container relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/20 rounded-3xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-1000"></div>
-            <div className="relative bg-[#111] rounded-3xl p-8 shadow-[0_0_50px_-12px_rgba(255,255,255,0.15)] flex flex-col border border-white/10">
+            <div className="relative bg-[#111] rounded-3xl p-8 shadow-[0_0_50px_-12px_rgba(255,255,255,0.15)] flex flex-col">
 
               <h2 className="text-xl text-white font-medium mb-8 pl-1">{t.step1}</h2>
 
@@ -166,7 +167,7 @@ function App() {
                     <CloudUpload size={40} className="text-white relative z-10" />
                   </div>
 
-                  <p className="text-gray-200 text-base font-medium text-center">
+                  <p className="text-white text-lg font-medium text-center">
                     {t.dropText}
                   </p>
                 </div>
@@ -183,7 +184,7 @@ function App() {
               {/* Footer Buttons */}
               <div className="flex flex-col md:flex-row items-center justify-between mt-8 pt-4">
                 <div className="flex space-x-2">
-                  <span className="px-3 py-1 bg-[#222] text-xs text-gray-300 border border-white/10 rounded">
+                  <span className="px-3 py-1 bg-[#222] text-xs text-white border border-white/10 rounded">
                     {t.formats.join(', ')}
                   </span>
                 </div>
