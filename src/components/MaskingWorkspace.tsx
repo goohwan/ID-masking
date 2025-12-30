@@ -22,7 +22,9 @@ const translations = {
         detected: '감지된 민감 정보',
         noDetected: '자동으로 감지된 민감 정보가 없습니다.',
         rawText: '원본 텍스트 (디버그)',
-        manual: '수동 선택'
+        manual: '수동 선택',
+        viewOriginal: '원본 이미지',
+        viewProcessed: '분석된 이미지(흑백)'
     },
     en: {
         processing: 'Processing Image...',
@@ -33,7 +35,9 @@ const translations = {
         detected: 'Detected Sensitive Data',
         noDetected: 'No sensitive data automatically detected.',
         rawText: 'Raw Text (Debug)',
-        manual: 'Manual Selection'
+        manual: 'Manual Selection',
+        viewOriginal: 'Original Image',
+        viewProcessed: 'Analyzed Image (B/W)'
     }
 };
 
@@ -350,26 +354,21 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8 sticky top-4 z-40 bg-[#121212]/90 backdrop-blur-md p-4 rounded-2xl border border-white/5 shadow-xl">
 
                 {/* View Mode Toggle */}
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 self-center md:self-auto">
-                    <button
-                        onClick={() => setViewMode('original')}
-                        className={`px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${viewMode === 'original'
-                                ? 'bg-white text-black shadow-lg'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                            }`}
-                    >
-                        Original
-                    </button>
-                    <button
-                        onClick={() => setViewMode('processed')}
-                        className={`px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${viewMode === 'processed'
-                                ? 'bg-white text-black shadow-lg'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                            }`}
-                    >
-                        Analyzed B/W
-                    </button>
-                </div>
+                {/* View Mode Toggle */}
+                <button
+                    onClick={() => setViewMode(viewMode === 'original' ? 'processed' : 'original')}
+                    className="w-full md:w-auto h-12 px-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-medium flex items-center justify-center gap-3 transition-all"
+                >
+                    <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${viewMode === 'original' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-gray-600'}`} />
+                        <span className={viewMode === 'original' ? 'text-white' : 'text-gray-500'}>{t.viewOriginal}</span>
+                    </div>
+                    <div className="w-px h-4 bg-white/20 mx-1"></div>
+                    <div className="flex items-center gap-2">
+                        <span className={viewMode === 'processed' ? 'text-white' : 'text-gray-500'}>{t.viewProcessed}</span>
+                        <div className={`w-2 h-2 rounded-full ${viewMode === 'processed' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'bg-gray-600'}`} />
+                    </div>
+                </button>
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 w-full md:w-auto">
