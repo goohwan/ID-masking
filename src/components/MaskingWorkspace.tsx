@@ -350,41 +350,55 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
     return (
         <div className="w-full">
             {/* Header / Controls */}
-            {/* Control Bar */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8 sticky top-4 z-40 bg-[#121212]/90 backdrop-blur-md p-4 rounded-2xl border border-white/5 shadow-xl">
+            {/* Premium Control Bar */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 sticky top-6 z-50 p-1">
 
-                {/* View Mode Toggle */}
-                {/* View Mode Toggle */}
-                <button
-                    onClick={() => setViewMode(viewMode === 'original' ? 'processed' : 'original')}
-                    className="w-full md:w-auto h-12 px-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-medium flex items-center justify-center gap-3 transition-all"
-                >
-                    <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${viewMode === 'original' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-gray-600'}`} />
-                        <span className={viewMode === 'original' ? 'text-white' : 'text-gray-500'}>{t.viewOriginal}</span>
-                    </div>
-                    <div className="w-px h-4 bg-white/20 mx-1"></div>
-                    <div className="flex items-center gap-2">
-                        <span className={viewMode === 'processed' ? 'text-white' : 'text-gray-500'}>{t.viewProcessed}</span>
-                        <div className={`w-2 h-2 rounded-full ${viewMode === 'processed' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'bg-gray-600'}`} />
-                    </div>
-                </button>
+                {/* Glassmorphic Container for Controls */}
+                <div className="w-full md:w-auto p-1.5 bg-[#1a1a1a]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center relative overflow-hidden">
+                    {/* View Mode Segmented Control */}
+                    <div className="relative flex w-full md:w-auto bg-black/50 rounded-xl p-1 border border-white/5">
+                        {/* Sliding Background (Animated) */}
+                        <div
+                            className={`absolute top-1 bottom-1 rounded-lg bg-zinc-800 border border-white/10 shadow-sm transition-all duration-300 ease-spring ${viewMode === 'original' ? 'left-1 w-[calc(50%-4px)]' : 'left-[50%] w-[calc(50%-4px)]'
+                                }`}
+                        />
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 w-full md:w-auto">
+                        <button
+                            onClick={() => setViewMode('original')}
+                            className={`relative flex-1 md:flex-none md:w-36 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors z-10 ${viewMode === 'original' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
+                                }`}
+                        >
+                            <span className={`w-1.5 h-1.5 rounded-full transition-colors ${viewMode === 'original' ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-transparent'}`} />
+                            {t.viewOriginal}
+                        </button>
+
+                        <button
+                            onClick={() => setViewMode('processed')}
+                            className={`relative flex-1 md:flex-none md:w-40 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors z-10 ${viewMode === 'processed' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
+                                }`}
+                        >
+                            <span className={`w-1.5 h-1.5 rounded-full transition-colors ${viewMode === 'processed' ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'bg-transparent'}`} />
+                            {t.viewProcessed}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Action Buttons Group */}
+                <div className="w-full md:w-auto flex gap-3">
                     <button
                         onClick={onReset}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 h-12 px-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all group"
+                        className="flex-1 md:flex-none h-12 px-6 rounded-2xl border border-white/10 bg-[#1a1a1a]/80 backdrop-blur-md hover:bg-white/5 active:bg-white/10 text-gray-400 hover:text-white transition-all duration-200 flex items-center justify-center gap-2 group shadow-lg"
                     >
-                        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                        <span className="font-semibold text-sm">{t.uploadNew}</span>
+                        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform duration-300 text-gray-500 group-hover:text-white" />
+                        <span className="font-semibold text-sm tracking-wide">{t.uploadNew}</span>
                     </button>
 
                     <button
                         onClick={handleApplyMasking}
-                        className="flex-[2] md:flex-none h-12 px-8 rounded-xl bg-white text-black font-bold text-sm md:text-base flex items-center justify-center gap-2 hover:bg-[#f2f2f2] transition-all transform hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-white/10"
+                        className="flex-[2] md:flex-none h-12 px-8 rounded-2xl bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black font-bold text-sm md:text-base flex items-center justify-center gap-2.5 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 tracking-wide border border-white/50"
                     >
-                        {t.apply}
+                        <span>{t.apply}</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
                     </button>
                 </div>
             </div>
