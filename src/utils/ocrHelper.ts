@@ -114,34 +114,35 @@ const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
             ctx.drawImage(img, 0, 0, width, height);
 
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            // const data = imageData.data;
+            const data = imageData.data;
 
-            // 2. Grayscale - DISABLED for testing
-            // for (let i = 0; i < data.length; i += 4) {
-            //     const r = data[i];
-            //     const g = data[i + 1];
-            //     const b = data[i + 2];
-            //     // Luminosity
-            //     const avg = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            // 2. Black Text Filter
+            // Attempt to keep only "black" or very dark pixels.
+            // Heuristic: If R, G, and B are all below a certain threshold, it's black/dark.
+            // Otherwise it's background/color -> make it white.
+            const threshold = 110; // Threshold 0-255. Lower = stricter black.
 
-            //     data[i] = avg;
-            //     data[i + 1] = avg;
-            //     data[i + 2] = avg;
-            // }
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
 
+                if (r < threshold && g < threshold && b < threshold) {
+                    // Keep as black (Maximize contrast)
+                    data[i] = 0;
+                    data[i + 1] = 0;
+                    data[i + 2] = 0;
+                } else {
+                    // Make it white
+                    data[i] = 255;
+                    data[i + 1] = 255;
+                    data[i + 2] = 255;
+                }
+            }
+
+            // Previous Grayscale/Binarization disabled
             // 3. Binarization (Otsu's Method) - DISABLED for testing
-            // const threshold = getOtsuThreshold(data);
-            // console.log(`[preprocessImage] Otsu Threshold calculated: ${threshold}`);
-
-            // for (let i = 0; i < data.length; i += 4) {
-            //     const val = data[i]; // already grayscaled
-            //     // Apply threshold
-            //     const finalVal = (val < threshold) ? 0 : 255;
-
-            //     data[i] = finalVal;
-            //     data[i + 1] = finalVal;
-            //     data[i + 2] = finalVal;
-            // }
+            // ...
 
             ctx.putImageData(imageData, 0, 0);
 
