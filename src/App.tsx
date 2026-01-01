@@ -7,7 +7,7 @@ type Language = 'ko' | 'en';
 
 const translations = {
   ko: {
-    brand: 'PrivacyGuard',
+    brand: 'ID-Mask / ',
     language: 'English',
     locales: '로컬데이터 & 보안지능', // Matching the text in top right of mockup somewhat
     desc: '로컬 OCR 기술을 사용하여 신분증의 민감한 정보를 자동으로 가려줍니다.\n고객님의 데이터는 브라우저의 로컬저장소를 벗어나지 않습니다.',
@@ -18,7 +18,7 @@ const translations = {
     secure: 'Local Processing',
   },
   en: {
-    brand: 'PrivacyGuard',
+    brand: 'ID-Mask / ',
     language: '한국어',
     locales: 'Local Data & Secure Intelligence',
     desc: 'Automatically mask sensitive information on your ID cards using local OCR technology. Your data never leaves your browser.',
