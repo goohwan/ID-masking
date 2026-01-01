@@ -18,7 +18,7 @@ const translations = {
     secure: 'Local Processing',
   },
   en: {
-    brand: 'ID-Mask / ',
+    brand: 'ID-Mask',
     language: '한국어',
     locales: 'Local Data',
     desc: 'Automatically mask sensitive information on your ID cards using local OCR technology. Your data never leaves your browser.',
