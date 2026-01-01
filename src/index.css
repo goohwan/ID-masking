@@ -31,7 +31,9 @@ body {
 
 @media (min-width: 451px) {
   .responsive-container {
-    width: 85%;
+    width: 100%;
+    min-width: 440px;
+    max-width: 650px;
   }
 }
 

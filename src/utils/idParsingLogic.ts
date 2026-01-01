@@ -348,6 +348,8 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
 
         // Issue Date
         const dateRegex = /(\d{4}\s*[.\-]\s*\d{2}\s*[.\-]\s*\d{2})/;
+        const authorityRegex = /[가-힣]+(지방)?경찰청장/;
+
         for (let i = lines.length - 1; i >= 0; i--) {
             const line = lines[i];
             const match = line.text.match(dateRegex);
@@ -356,14 +358,45 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
                 const isRRNLine = fields.some(f => f.label === "주민등록번호" && Math.abs(f.bbox.y0 - line.bbox.y0) < 10);
 
                 if (!isPeriod && !isRRNLine) {
-                    fields.push({
-                        id: `issue-date-${i}`,
-                        label: "발급일",
-                        value: match[0],
-                        ids: [],
-                        bbox: line.bbox
-                    });
-                    logs.push(`Found Issue Date at line ${i}`);
+                    const authorityMatch = line.text.match(authorityRegex);
+
+                    if (authorityMatch) {
+                        // Split Date and Authority
+                        const dateStr = match[0];
+                        const dateIndex = match.index || 0;
+                        const dateBBox = interpolateBBox(line.bbox, line.text.length, dateIndex, dateStr.length);
+
+                        fields.push({
+                            id: `issue-date-${i}`,
+                            label: "발급일",
+                            value: dateStr,
+                            ids: [],
+                            bbox: dateBBox
+                        });
+
+                        const authStr = authorityMatch[0];
+                        const authIndex = authorityMatch.index || 0;
+                        const authBBox = interpolateBBox(line.bbox, line.text.length, authIndex, authStr.length);
+
+                        fields.push({
+                            id: `issue-authority-${i}`,
+                            label: "발급기관",
+                            value: authStr,
+                            ids: [],
+                            bbox: authBBox
+                        });
+
+                        logs.push(`Found Issue Date & Authority at line ${i} (Split)`);
+                    } else {
+                        fields.push({
+                            id: `issue-date-${i}`,
+                            label: "발급일",
+                            value: match[0],
+                            ids: [],
+                            bbox: line.bbox
+                        });
+                        logs.push(`Found Issue Date at line ${i}`);
+                    }
                     break;
                 }
             }

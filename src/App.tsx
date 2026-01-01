@@ -10,7 +10,7 @@ const translations = {
     brand: 'PrivacyGuard',
     language: 'English',
     locales: '로컬데이터 & 보안지능', // Matching the text in top right of mockup somewhat
-    desc: '로컬 OCR 기술을 사용하여 신분증의 민감한 정보를 자동으로 가려줍니다. 데이터는 브라우저를 벗어나지 않습니다.',
+    desc: '로컬 OCR 기술을 사용하여 신분증의 민감한 정보를 자동으로 가려줍니다.\n고객님의 데이터는 브라우저의 로컬저장소를 벗어나지 않습니다.',
     step1: '1. 신분증 이미지 업로드',
     dropText: '이미지를 드래그 앤 드롭하거나 클릭하여 업로드하세요.',
     formats: ['JPEG', 'PNG', 'PDF'],
@@ -33,7 +33,9 @@ const translations = {
 function App() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [lang, setLang] = useState<Language>('ko');
+  /* Main Glowing Card */
   const [dragActive, setDragActive] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const t = translations[lang];
@@ -130,7 +132,7 @@ function App() {
 
         {/* Text Description */}
         {!imageFile && (
-          <p className="responsive-container text-white text-base mb-12 text-center leading-relaxed font-light tracking-wide opacity-90">
+          <p className="responsive-container text-white text-base mb-12 text-center leading-relaxed font-light tracking-wide opacity-90 whitespace-pre-wrap">
             {t.desc}
           </p>
         )}
@@ -205,13 +207,27 @@ function App() {
           <div className="responsive-container animate-in fade-in zoom-in-95 duration-300">
             <MaskingWorkspace
               imageFile={imageFile}
-              onReset={() => setImageFile(null)}
+              onReset={() => {
+                setImageFile(null);
+                setIsReady(false);
+              }}
               lang={lang}
+              onReady={setIsReady}
             />
           </div>
         )}
       </main>
 
+      {/* Top Button */}
+      {imageFile && isReady && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-8 right-8 p-4 bg-white text-black rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] z-[9999] hover:bg-gray-200 transition-all hover:scale-110 active:scale-95"
+          aria-label="Scroll to top"
+        >
+          <span className="font-bold">TOP</span>
+        </button>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ interface MaskingWorkspaceProps {
     imageFile: File;
     onReset: () => void;
     lang: 'ko' | 'en';
+    onReady?: (ready: boolean) => void;
 }
 
 const translations = {
@@ -41,7 +42,7 @@ const translations = {
     }
 };
 
-const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset, lang }) => {
+const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset, lang, onReady }) => {
     const [status, setStatus] = useState<'idle' | 'processing' | 'ready'>('idle');
     const [progress, setProgress] = useState(0);
     const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
@@ -73,6 +74,7 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
             setSelectedRegions(new Set());
             setParsedData(null);
             setStatus('processing');
+            if (onReady) onReady(false);
             setProgress(0);
 
             const runOCR = async () => {
@@ -136,6 +138,7 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                     setSelectedRegions(new Set(defaultSelected));
 
                     setStatus('ready');
+                    if (onReady) onReady(true);
                 } catch (error) {
                     console.error("OCR Error:", error);
                     // Handle error
@@ -330,7 +333,7 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
             <div className="flex flex-col items-center justify-center p-12 bg-[#161616] rounded-3xl border border-white/10 shadow-2xl">
                 <Loader2 className="animate-spin text-white mb-4" size={48} />
                 <h3 className="text-xl font-medium text-white mb-2">{t.processing}</h3>
-                <p className="text-gray-400">{t.analyzing}</p>
+                <p className="text-white font-medium">{t.analyzing}</p>
                 <div className="w-64 h-1 bg-gray-800 rounded-full mt-6 overflow-hidden">
                     <div
                         className="h-full bg-white transition-all duration-300"
@@ -354,7 +357,7 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
             {/* Accessible Control Bar */}
             {/* Accessible Control Bar - BIG & SPACIOUS */}
             {/* Bootstrap Control Bar */}
-            <div className="container-fluid space-y-4 mb-5 p-3 bg-dark rounded-3 shadow sticky-top" style={{ top: '10px', zIndex: 1050 }}>
+            <div className="container-fluid space-y-4 mb-5 p-3 bg-dark rounded-3 shadow" style={{ zIndex: 1050 }}>
                 {/* Row 1: Nav & Toggle */}
                 <div className="row g-3">
                     {/* Reset Button */}
@@ -400,9 +403,9 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="flex flex-col gap-8">
                 {/* Image Preview / Canvas Area */}
-                <div className="lg:col-span-2 relative bg-[#111] rounded-2xl overflow-hidden border border-white/10 select-none shadow-xl flex items-center justify-center bg-black/50 min-h-[300px]">
+                <div className="relative bg-[#0a0a0a] rounded-2xl overflow-hidden border border-white/10 select-none shadow-xl flex items-center justify-center min-h-[300px] sticky top-[45px] z-30">
                     {imageUrl && (
                         <div
                             className="relative inline-block max-w-full"
@@ -493,7 +496,7 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                 </div>
 
                 {/* Controls / Info Area */}
-                <div className="bg-[#111] p-6 rounded-2xl border border-white/10 h-fit space-y-6 shadow-xl max-h-[80vh] overflow-y-auto">
+                <div className="bg-[#111] p-6 rounded-2xl border border-white/10 space-y-6 shadow-xl max-h-[55vh] overflow-y-auto">
                     <div>
                         <h4 className="text-lg font-medium text-white mb-4 flex items-center justify-between">
                             <div className="flex items-center">
@@ -524,19 +527,22 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                                                     : 'bg-dark border-secondary'
                                                     }`}
                                             >
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span className="text-xs font-bold text-light uppercase tracking-wider">
-                                                        {field.type}
-                                                    </span>
-                                                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${selectedRegions.has(field.id)
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                        <span className="text-xs font-bold text-light uppercase tracking-wider whitespace-nowrap flex-shrink-0">
+                                                            {field.type}
+                                                        </span>
+                                                        <span className="text-secondary">:</span>
+                                                        <span className="text-sm text-white font-mono truncate">
+                                                            {field.text}
+                                                        </span>
+                                                    </div>
+                                                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${selectedRegions.has(field.id)
                                                         ? 'bg-primary border-primary'
                                                         : 'border-secondary'
                                                         }`}>
                                                         {selectedRegions.has(field.id) && <Check size={16} className="text-white" />}
                                                     </div>
-                                                </div>
-                                                <div className="text-sm text-white font-mono break-all ml-1">
-                                                    {field.text}
                                                 </div>
                                             </div>
                                         ))}
@@ -644,6 +650,8 @@ const MaskingWorkspace: React.FC<MaskingWorkspaceProps> = ({ imageFile, onReset,
                     )}
                 </div>
             )}
+
+
         </div>
     );
 };
