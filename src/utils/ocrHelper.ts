@@ -120,7 +120,7 @@ const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
             // Attempt to keep only "black" or very dark pixels.
             // Heuristic: If R, G, and B are all below a certain threshold, it's black/dark.
             // Otherwise it's background/color -> make it white.
-            const threshold = 110; // Threshold 0-255. Lower = stricter black.
+            const threshold = 160; // Threshold 0-255. Lower = stricter black.
 
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
