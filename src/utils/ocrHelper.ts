@@ -31,12 +31,66 @@ interface PreprocessResult {
 }
 
 // Helper to preprocess image (Grayscale + High Contrast) -> Returns a new File object + Dimensions
+// Helper to compute proper threshold using Otsu's method
+const getOtsuThreshold = (data: Uint8ClampedArray): number => {
+    const histogram = new Array(256).fill(0);
+    let totalPixels = 0;
+
+    // Build histogram (using only Green channel as proxy for Grayscale since we already grayscaled)
+    for (let i = 0; i < data.length; i += 4) {
+        histogram[data[i]]++;
+        totalPixels++;
+    }
+
+    let sum = 0;
+    for (let i = 0; i < 256; i++) sum += i * histogram[i];
+
+    let sumB = 0;
+    let wB = 0;
+    let wF = 0;
+    let maxVar = 0;
+    let threshold = 0;
+
+    for (let t = 0; t < 256; t++) {
+        wB += histogram[t];
+        if (wB === 0) continue;
+        wF = totalPixels - wB;
+        if (wF === 0) break;
+
+        sumB += t * histogram[t];
+        const mB = sumB / wB;
+        const mF = (sum - sumB) / wF;
+
+        const varBetween = wB * wF * (mB - mF) * (mB - mF);
+        if (varBetween > maxVar) {
+            maxVar = varBetween;
+            threshold = t;
+        }
+    }
+    return threshold;
+};
+
+// Helper to preprocess image (Upscale + Grayscale + High Contrast/Binarization) -> Returns a new File object + Dimensions
 const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
     return new Promise((resolve, _reject) => {
         const img = new Image();
         const url = URL.createObjectURL(imageFile);
 
         img.onload = () => {
+            // 1. Calculate new dimensions (Upscaling)
+            const minWidth = 2500; // Target minimum width for better OCR
+            let width = img.width;
+            let height = img.height;
+
+            if (width < minWidth) {
+                const scale = minWidth / width;
+                width = Math.round(width * scale);
+                height = Math.round(height * scale);
+                console.log(`[preprocessImage] Upscaling image from ${img.width}x${img.height} to ${width}x${height} (Scale: ${scale.toFixed(2)}x)`);
+            } else {
+                console.log(`[preprocessImage] Image size sufficient: ${width}x${height}`);
+            }
+
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (!ctx) {
@@ -48,14 +102,19 @@ const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
                 });
                 return;
             }
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Use high quality image smoothing
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, width, height);
 
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
 
-            // Simple Grayscale & Contrast
+            // 2. Grayscale
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
@@ -63,16 +122,25 @@ const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
                 // Luminosity
                 const avg = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-                // Increase contrast
-                const contrast = 1.3;
-                let newVal = (avg - 128) * contrast + 128;
-                if (newVal < 0) newVal = 0;
-                if (newVal > 255) newVal = 255;
-
-                data[i] = newVal;
-                data[i + 1] = newVal;
-                data[i + 2] = newVal;
+                data[i] = avg;
+                data[i + 1] = avg;
+                data[i + 2] = avg;
             }
+
+            // 3. Binarization (Otsu's Method)
+            const threshold = getOtsuThreshold(data);
+            console.log(`[preprocessImage] Otsu Threshold calculated: ${threshold}`);
+
+            for (let i = 0; i < data.length; i += 4) {
+                const val = data[i]; // already grayscaled
+                // Apply threshold
+                const finalVal = (val < threshold) ? 0 : 255;
+
+                data[i] = finalVal;
+                data[i + 1] = finalVal;
+                data[i + 2] = finalVal;
+            }
+
             ctx.putImageData(imageData, 0, 0);
 
             // output as Blob/File to avoid huge strings
