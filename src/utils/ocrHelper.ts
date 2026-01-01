@@ -116,24 +116,33 @@ const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
 
-            // 2. Black Text Filter
+            // 2. Black Text Filter + Saturation Check
             // Attempt to keep only "black" or very dark pixels.
-            // Heuristic: If R, G, and B are all below a certain threshold, it's black/dark.
-            // Otherwise it's background/color -> make it white.
-            const threshold = 160; // Threshold 0-255. Lower = stricter black.
+            // Heuristic:
+            // 1. Brightness: R, G, B must be below threshold (Dark enough)
+            // 2. Saturation: Difference between Max and Min channel must be low (Neutral color)
+
+            const threshold = 160; // Brightness Threshold (0-255). Lower = stricter black.
+            const colorDiffThreshold = 30; // Saturation Threshold (0-255). Lower = stricter neutral/grayscale.
 
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
 
-                if (r < threshold && g < threshold && b < threshold) {
+                // Calculate saturation proxy (Max - Min)
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                const diff = max - min;
+
+                // Condition: Dark AND Neutral
+                if ((r < threshold && g < threshold && b < threshold) && (diff < colorDiffThreshold)) {
                     // Keep as black (Maximize contrast)
                     data[i] = 0;
                     data[i + 1] = 0;
                     data[i + 2] = 0;
                 } else {
-                    // Make it white
+                    // Make it white (Background/Watermark)
                     data[i] = 255;
                     data[i + 1] = 255;
                     data[i + 2] = 255;
