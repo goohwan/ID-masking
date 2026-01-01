@@ -32,43 +32,45 @@ interface PreprocessResult {
 
 // Helper to preprocess image (Grayscale + High Contrast) -> Returns a new File object + Dimensions
 // Helper to compute proper threshold using Otsu's method
-const getOtsuThreshold = (data: Uint8ClampedArray): number => {
-    const histogram = new Array(256).fill(0);
-    let totalPixels = 0;
+// Helper to compute proper threshold using Otsu's method
+// const getOtsuThreshold = (data: Uint8ClampedArray): number => {
+//     const histogram = new Array(256).fill(0);
+//     let totalPixels = 0;
 
-    // Build histogram (using only Green channel as proxy for Grayscale since we already grayscaled)
-    for (let i = 0; i < data.length; i += 4) {
-        histogram[data[i]]++;
-        totalPixels++;
-    }
+//     // Build histogram (using only Green channel as proxy for Grayscale since we already grayscaled)
+//     // for (let i = 0; i < data.length; i += 4) {
+//     //     histogram[data[i]]++;
+//     //     totalPixels++;
+//     // }
 
-    let sum = 0;
-    for (let i = 0; i < 256; i++) sum += i * histogram[i];
+//     // let sum = 0;
+//     // for (let i = 0; i < 256; i++) sum += i * histogram[i];
 
-    let sumB = 0;
-    let wB = 0;
-    let wF = 0;
-    let maxVar = 0;
-    let threshold = 0;
+//     // let sumB = 0;
+//     // let wB = 0;
+//     // let wF = 0;
+//     // let maxVar = 0;
+//     // let threshold = 0;
 
-    for (let t = 0; t < 256; t++) {
-        wB += histogram[t];
-        if (wB === 0) continue;
-        wF = totalPixels - wB;
-        if (wF === 0) break;
+//     // for (let t = 0; t < 256; t++) {
+//     //     wB += histogram[t];
+//     //     if (wB === 0) continue;
+//     //     wF = totalPixels - wB;
+//     //     if (wF === 0) break;
 
-        sumB += t * histogram[t];
-        const mB = sumB / wB;
-        const mF = (sum - sumB) / wF;
+//     //     sumB += t * histogram[t];
+//     //     const mB = sumB / wB;
+//     //     const mF = (sum - sumB) / wF;
 
-        const varBetween = wB * wF * (mB - mF) * (mB - mF);
-        if (varBetween > maxVar) {
-            maxVar = varBetween;
-            threshold = t;
-        }
-    }
-    return threshold;
-};
+//     //     const varBetween = wB * wF * (mB - mF) * (mB - mF);
+//     //     if (varBetween > maxVar) {
+//     //         maxVar = varBetween;
+//     //         threshold = t;
+//     //     }
+//     // }
+//     // return threshold;
+//     return 0; // Placeholder
+// };
 
 // Helper to preprocess image (Upscale + Grayscale + High Contrast/Binarization) -> Returns a new File object + Dimensions
 const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
@@ -112,34 +114,34 @@ const preprocessImage = (imageFile: File): Promise<PreprocessResult> => {
             ctx.drawImage(img, 0, 0, width, height);
 
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
+            // const data = imageData.data;
 
-            // 2. Grayscale
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                // Luminosity
-                const avg = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            // 2. Grayscale - DISABLED for testing
+            // for (let i = 0; i < data.length; i += 4) {
+            //     const r = data[i];
+            //     const g = data[i + 1];
+            //     const b = data[i + 2];
+            //     // Luminosity
+            //     const avg = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-                data[i] = avg;
-                data[i + 1] = avg;
-                data[i + 2] = avg;
-            }
+            //     data[i] = avg;
+            //     data[i + 1] = avg;
+            //     data[i + 2] = avg;
+            // }
 
-            // 3. Binarization (Otsu's Method)
-            const threshold = getOtsuThreshold(data);
-            console.log(`[preprocessImage] Otsu Threshold calculated: ${threshold}`);
+            // 3. Binarization (Otsu's Method) - DISABLED for testing
+            // const threshold = getOtsuThreshold(data);
+            // console.log(`[preprocessImage] Otsu Threshold calculated: ${threshold}`);
 
-            for (let i = 0; i < data.length; i += 4) {
-                const val = data[i]; // already grayscaled
-                // Apply threshold
-                const finalVal = (val < threshold) ? 0 : 255;
+            // for (let i = 0; i < data.length; i += 4) {
+            //     const val = data[i]; // already grayscaled
+            //     // Apply threshold
+            //     const finalVal = (val < threshold) ? 0 : 255;
 
-                data[i] = finalVal;
-                data[i + 1] = finalVal;
-                data[i + 2] = finalVal;
-            }
+            //     data[i] = finalVal;
+            //     data[i + 1] = finalVal;
+            //     data[i + 2] = finalVal;
+            // }
 
             ctx.putImageData(imageData, 0, 0);
 
