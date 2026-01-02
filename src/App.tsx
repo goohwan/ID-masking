@@ -12,10 +12,12 @@ const translations = {
     locales: '로컬데이터', // Matching the text in top right of mockup somewhat
     desc: '로컬 OCR 기술을 사용하여 신분증의 민감한 정보를 자동으로 가려줍니다.\n고객님의 데이터는 브라우저의 로컬저장소를 벗어나지 않습니다.',
     step1: '1. 신분증 이미지 업로드',
-    dropText: '이미지를 드래그 앤 드롭하거나 클릭하여 업로드하세요.',
+    dropText: '이미지를 드래그 앤 드롭하거나 클릭하여 업로드하세요.\n(가로 700px 이상, 컬러 이미지만 가능)',
     formats: ['JPEG', 'PNG', 'PDF'],
     copyBtn: 'Copy to Clipboard',
     secure: 'Local Processing',
+    error_width: '이미지 크기가 너무 작습니다. 가로 700px 이상의 이미지를 업로드해주세요.',
+    error_bw: '흑백 이미지는 지원되지 않습니다. 컬러 이미지를 업로드해주세요.'
   },
   en: {
     brand: 'ID-Mask',
@@ -23,16 +25,19 @@ const translations = {
     locales: 'Local Data',
     desc: 'Automatically mask sensitive information on your ID cards using local OCR technology. Your data never leaves your browser.',
     step1: '1. Upload ID Card Image',
-    dropText: 'Drag and drop your image here, or click to browse.',
+    dropText: 'Drag and drop your image here, or click to browse.\n(Min width 700px, Color image only)',
     formats: ['JPEG', 'PNG', 'PDF'],
     copyBtn: 'Copy to Clipboard',
     secure: 'Local Processing',
+    error_width: 'Image is too small. Width must be at least 700px.',
+    error_bw: 'Black & White images are not supported. Please upload a color image.'
   }
 };
 
 function App() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [lang, setLang] = useState<Language>('ko');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   /* Main Glowing Card */
   const [dragActive, setDragActive] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -44,10 +49,89 @@ function App() {
     setLang(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
+  const validateImage = (file: File): Promise<{ valid: boolean; message?: string }> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+
+      img.onload = () => {
+        // 1. Width Check
+        if (img.width < 700) {
+          URL.revokeObjectURL(url);
+          resolve({ valid: false, message: t.error_width });
+          return;
+        }
+
+        // 2. Color Check
+        // Draw to canvas to sample pixels
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve({ valid: true }); // Fallback if context fails
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0);
+
+        // Sample pixels to check for saturation
+        // We don't need to check every pixel. Stride check for performance.
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        let coloredPixels = 0;
+        let testedPixels = 0;
+        const stride = 100; // Check every 100th pixel to speed up
+
+        for (let i = 0; i < data.length; i += 4 * stride) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+
+          testedPixels++;
+
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const diff = max - min; // Saturation proxy
+
+          // If difference is significant, it's a colored pixel
+          if (diff > 20) {
+            coloredPixels++;
+          }
+        }
+
+        URL.revokeObjectURL(url);
+
+        // If very few colored pixels (< 1% of tested), likely B/W
+        if (testedPixels > 0 && (coloredPixels / testedPixels) < 0.01) {
+          resolve({ valid: false, message: t.error_bw });
+        } else {
+          resolve({ valid: true });
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve({ valid: false, message: "Invalid image file." });
+      };
+
+      img.src = url;
+    });
+  };
+
   // Drag & Drop Handlers
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
-      setImageFile(file);
+      setErrorMsg(null); // Clear previous errors
+      const validation = await validateImage(file);
+
+      if (validation.valid) {
+        setImageFile(file);
+      } else {
+        setErrorMsg(validation.message || "Invalid image.");
+      }
     }
   };
 
@@ -170,9 +254,14 @@ function App() {
                     <CloudUpload size={40} className="text-white relative z-10" />
                   </div>
 
-                  <p className="text-white text-lg font-medium text-center">
+                  <p className="text-white text-lg font-medium text-center whitespace-pre-wrap">
                     {t.dropText}
                   </p>
+                  {errorMsg && (
+                    <p className="text-red-500 text-sm font-medium text-center mt-3 animate-pulse">
+                      {errorMsg}
+                    </p>
+                  )}
                 </div>
 
                 {/* Example Image */}
