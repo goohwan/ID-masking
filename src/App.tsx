@@ -190,7 +190,7 @@ function App() {
           <div className="flex items-center space-x-2 text-white">
             <Shield size={20} className="text-white fill-white/20" />
             <span className="font-semibold text-lg tracking-wide text-white">{t.brand}</span>
-            <span className="text-xs text-gray-400 font-normal ml-1 mb-1 self-end">(v1.2)</span>
+            <span className="text-xs text-gray-400 font-normal ml-1 mb-1 self-end">(v1.3)</span>
           </div>
 
 

@@ -26,7 +26,7 @@ const mergeBBoxes = (bboxes: Tesseract.Bbox[]): Tesseract.Bbox => {
     };
 };
 
-// Helper to interpolate bbox horizontally
+// Helper to interpolate bbox horizontally with improved vertical fit
 const interpolateBBox = (fullBBox: Tesseract.Bbox, totalLength: number, start: number, length: number): Tesseract.Bbox => {
     const width = fullBBox.x1 - fullBBox.x0;
     const charWidth = width / totalLength;
@@ -35,11 +35,16 @@ const interpolateBBox = (fullBBox: Tesseract.Bbox, totalLength: number, start: n
     const x0 = fullBBox.x0 + (charWidth * start);
     const x1 = fullBBox.x0 + (charWidth * (start + length));
 
+    // Vertical Fit Adjustment:
+    // Tesseract boxes are often too tall. Shrink by ~20% (10% top, 10% bottom) to fit text better and avoid overlap.
+    const height = fullBBox.y1 - fullBBox.y0;
+    const verticalPadding = height * 0.15;
+
     return {
         x0: Math.floor(x0),
-        y0: fullBBox.y0,
+        y0: Math.floor(fullBBox.y0 + verticalPadding),
         x1: Math.ceil(x1),
-        y1: fullBBox.y1
+        y1: Math.ceil(fullBBox.y1 - verticalPadding)
     };
 };
 
@@ -56,7 +61,8 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
 
     // --- Regex Definitions ---
     // RRN: 6 digits - 7 digits (allow spaces everywhere)
-    const rrnRegex = /(\d{6})[^0-9]*([1-4][0-9\s]{6,})/;
+    // Relaxed to capture cases where hyphen is misread as a digit
+    const rrnRegex = /(\d{6})[^\d\n]*([\d\s-]{7,})/;
 
     // DL Number: 12 digits total usually
     const dlRegex = /(\d{2})[^0-9]+(\d{6})[^0-9]+(\d{2})/;
@@ -71,11 +77,18 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
     lines.forEach((line, idx) => {
         const match = line.text.match(rrnRegex);
         if (match) {
-            const digits = match[0].replace(/\D/g, '');
-            if (digits.length >= 13) {
-                // Determine positions in the original string to estimate bbox
-                // This is a naive estimation assuming monospace. 
-                // match[0] is the full string found in the line (e.g. "810627-1234567")
+            // match[1] = Birth (6 digits)
+            // match[2] = Back part (Mixed digits, spaces, hyphens)
+            // If OCR misread '-' as '4', match[2] might look like '41234567' (8 digits)
+
+            const birthPartRaw = match[1];
+            let backPartRaw = match[2].trim();
+
+            // Extract pure digits from back part
+            const backDigits = backPartRaw.replace(/\D/g, '');
+
+            // RRN must have at least 13 digits total (6 + 7)
+            if (birthPartRaw.length + backDigits.length >= 13) {
 
                 fields.push({
                     id: `rrn-${idx}`,
@@ -86,99 +99,98 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
                 });
                 logs.push(`Found RRN on line ${idx}: ${match[0]}`);
 
-                // Split RRN into Date of Birth, Gender, and Back Number
-                // Use regex capture groups to locate parts
-                // match[1] = Birth Date (6 digits)
-                // match[2] = Gender + Back Number (digits + potential spaces)
-
-                const birthPartRaw = match[1];
-                const backPartRaw = match[2];
-
-                // Calculate Visual Range of the match to ignore leading/trailing unknown whitespace effects on BBox
-                // The BBox covers the VISIBLE text. The match string might have wider reach if regex captures spaces.
-                // We trust that line.bbox covers from "First non-space char" to "Last non-space char" of the match (if match is whole line).
-
-                // Let's find relative start/end of visible chars in match[0]
+                // --- Visual Localization Logic ---
                 const matchString = match[0];
                 let firstVisibleIdx = 0;
                 let lastVisibleIdx = matchString.length - 1;
-
                 while (firstVisibleIdx < matchString.length && /\s/.test(matchString[firstVisibleIdx])) firstVisibleIdx++;
                 while (lastVisibleIdx >= 0 && /\s/.test(matchString[lastVisibleIdx])) lastVisibleIdx--;
-
                 const visibleLength = (lastVisibleIdx >= firstVisibleIdx) ? (lastVisibleIdx - firstVisibleIdx + 1) : matchString.length;
 
-                // --- 1. Birth Date ---
+                // 1. Birth Date
                 const birthStartIndex = matchString.indexOf(birthPartRaw);
                 const birthLength = birthPartRaw.length;
                 const birthDate = birthPartRaw;
 
-                // --- 2. Gender & Back Number ---
-                const backPartStartIndex = matchString.lastIndexOf(backPartRaw);
+                // 2. Back Part Handling
+                // We need to identify the TRUE 7 digits.
+                // Case A: 7 digits found. Good.
+                // Case B: 8 digits found. Likely 1st digit is a misread hyphen (like '4' or '1' or '7').
 
-                // Find digits in backPartRaw
-                const digitIndices: number[] = [];
+                let validBackDigits = backDigits;
+                let skipLeadingChars = 0;
+
+                if (backDigits.length === 8) {
+                    // Start from 2nd digit
+                    validBackDigits = backDigits.substring(1);
+                    skipLeadingChars = 1;
+                    logs.push(`Back part has 8 digits. Assuming 1st digit '${backDigits[0]}' is noise`);
+                }
+
+                // If massive noise, fallback to standard subs
+                if (validBackDigits.length < 7) {
+                    logs.push("Back part has insufficient digits even after noise check");
+                    return;
+                }
+
+                const genderVal = validBackDigits[0];
+                const backNumVal = validBackDigits.substring(1, 7); // Next 6
+
+                // Locate these in the original string to get BBox
+                const backPartStartInMatch = matchString.indexOf(backPartRaw);
+
+                // We need to find where the *Valid Gender Digit* actually is in backPartRaw
+                // It's the (skipLeadingChars + 1)-th digit in backPartRaw
+                let currentDigitCount = 0;
+                let relativeGenderIdx = -1;
+
                 for (let i = 0; i < backPartRaw.length; i++) {
-                    if (/[0-9]/.test(backPartRaw[i])) {
-                        digitIndices.push(i);
+                    if (/\d/.test(backPartRaw[i])) {
+                        if (currentDigitCount === skipLeadingChars) {
+                            relativeGenderIdx = i;
+                            break;
+                        }
+                        currentDigitCount++;
                     }
                 }
 
-                let genderGlobalIndex = backPartStartIndex;
-                let genderLength = 1;
-                let genderVal = "0";
+                if (relativeGenderIdx === -1) relativeGenderIdx = 0; // Fallback
 
-                let backNumGlobalIndex = backPartStartIndex;
-                let backNumLength = 0;
-                let backNumVal = "";
+                const genderGlobalIndex = backPartStartInMatch + relativeGenderIdx;
 
-                if (digitIndices.length >= 7) {
-                    // Gender is 1st digit
-                    const genderLocalIdx = digitIndices[0];
-                    genderGlobalIndex = backPartStartIndex + genderLocalIdx;
-                    genderLength = 1;
-                    genderVal = backPartRaw[genderLocalIdx];
+                // Find Start of Back Digits (after gender)
+                // We want the range for the remaining 6 digits
+                let relativeBackStartIdx = -1;
+                let relativeBackEndIdx = -1;
+                let digitsFound = 0;
 
-                    // Back Number is 2nd to 7th digit
-                    const startBackLocalIdx = digitIndices[1];
-                    const endBackLocalIdx = digitIndices[6]; // 7th digit
-
-                    backNumGlobalIndex = backPartStartIndex + startBackLocalIdx;
-                    backNumLength = (endBackLocalIdx - startBackLocalIdx) + 1;
-                    backNumVal = backPartRaw.substring(startBackLocalIdx, endBackLocalIdx + 1).replace(/\D/g, '');
-                } else {
-                    genderVal = digits.substring(6, 7);
-                    backNumVal = digits.substring(7, 13);
+                for (let i = relativeGenderIdx + 1; i < backPartRaw.length; i++) {
+                    if (/\d/.test(backPartRaw[i])) {
+                        if (relativeBackStartIdx === -1) relativeBackStartIdx = i;
+                        relativeBackEndIdx = i;
+                        digitsFound++;
+                        if (digitsFound === 6) break;
+                    }
                 }
 
-                // --- Helper Wrapper for Visible Range Interpolation ---
+                if (relativeBackStartIdx === -1) relativeBackStartIdx = relativeGenderIdx + 1;
+                if (relativeBackEndIdx === -1) relativeBackEndIdx = backPartRaw.length - 1;
+
+                const backNumGlobalIndex = backPartStartInMatch + relativeBackStartIdx;
+                const backNumLength = (relativeBackEndIdx - relativeBackStartIdx) + 1;
+
+                // Get BBoxes
                 const getBBoxForRange = (start: number, len: number) => {
-                    // Adjust start relative to firstVisibleIdx
                     const relativeStart = start - firstVisibleIdx;
-                    // If content starts before visible area (unlikely for RRN), clamp?
-                    // normalize logic
                     return interpolateBBox(line.bbox, visibleLength, relativeStart, len);
                 };
 
                 const birthBBox = getBBoxForRange(birthStartIndex, birthLength);
-
-                const genderBBox = getBBoxForRange(genderGlobalIndex, genderLength);
-
-                // Add a small start offset (gap) to backBBox to prevent overlap with Gender
-                // Logic: interpolate calculates floating point. If we are too close, it might floor/ceil into the previous char.
-                // We barely move the start index by a fraction like 0.1? No, better to adjust the result BBox.
+                const genderBBox = getBBoxForRange(genderGlobalIndex, 1);
 
                 let backBBox = getBBoxForRange(backNumGlobalIndex, backNumLength);
-
-                // Manual adjustment: Shift Back Number Start X slightly to the right to avoid Gender overlap
-                // Just 1 or 2 pixels is enough usually.
+                // Slight shift to prevent overlap
                 backBBox.x0 += 2;
-
-                // Apply snap for back number
-                if ((backNumGlobalIndex + backNumLength - 1) === lastVisibleIdx) {
-                    backBBox = { ...backBBox, x1: line.bbox.x1 };
-                }
-
 
                 fields.push({
                     id: `rrn-birth-${idx}`,
@@ -203,8 +215,9 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
                     ids: [`line-${idx}-back`],
                     bbox: backBBox
                 });
+
             } else {
-                logs.push(`Potential RRN match on line ${idx} too short: ${digits.length}`);
+                logs.push(`Potential RRN match on line ${idx} too short/invalid patterns`);
             }
         }
     });
@@ -332,29 +345,42 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
 
     if (idType.includes("운전면허증")) {
         // Renewal Period
+        // Check for 'period' keywords or tilde patterns
         const periodRegex = /\d{4}\s*[.\-]\s*\d{2}\s*[.\-]\s*\d{2}\s*~\s*\d{4}\s*[.\-]\s*\d{2}\s*[.\-]\s*\d{2}/;
+        const simplePeriodRegex = /~\s*\d{4}[.\-]\d{2}[.\-]\d{2}/; // Matches " ~ 2033.12.31"
+        const keywordPeriodRegex = /(적성|검사|기간)/;
+
         lines.forEach((line, idx) => {
-            if (periodRegex.test(line.text)) {
-                fields.push({
-                    id: `period-${idx}`,
-                    label: "갱신기간",
-                    value: line.text,
-                    ids: [],
-                    bbox: line.bbox
-                });
-                logs.push(`Found Period at line ${idx}`);
+            const isPeriod = periodRegex.test(line.text) || simplePeriodRegex.test(line.text) || keywordPeriodRegex.test(line.text);
+
+            if (isPeriod) {
+                // If contains date, add as period
+                if (/\d{4}[.\-]\d{2}[.\-]\d{2}/.test(line.text)) {
+                    fields.push({
+                        id: `period-${idx}`,
+                        label: "갱신기간",
+                        value: line.text,
+                        ids: [],
+                        bbox: line.bbox
+                    });
+                    logs.push(`Found Period at line ${idx}`);
+                }
             }
         });
 
         // Issue Date
+        // Strategy: Look for date pattern. Must NOT be 'Period'.
+        // Preference: Start from bottom. If line contains "Authority" (Police), it's the one.
         const dateRegex = /(\d{4}\s*[.\-]\s*\d{2}\s*[.\-]\s*\d{2})/;
         const authorityRegex = /[가-힣]+(지방)?경찰청장/;
 
         for (let i = lines.length - 1; i >= 0; i--) {
             const line = lines[i];
             const match = line.text.match(dateRegex);
+
             if (match) {
-                const isPeriod = periodRegex.test(line.text);
+                // Check if this line is part of period
+                const isPeriod = periodRegex.test(line.text) || simplePeriodRegex.test(line.text) || line.text.includes("기간") || line.text.includes("적성");
                 const isRRNLine = fields.some(f => f.label === "주민등록번호" && Math.abs(f.bbox.y0 - line.bbox.y0) < 10);
 
                 if (!isPeriod && !isRRNLine) {
@@ -388,6 +414,10 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
 
                         logs.push(`Found Issue Date & Authority at line ${i} (Split)`);
                     } else {
+                        // If no authority on same line, it might still be issue date (lowest date)
+                        // But ensure it's not the end date of period (which might be on its own line)
+                        // If we already found period lines above, check if this line is physically below them
+
                         fields.push({
                             id: `issue-date-${i}`,
                             label: "발급일",
@@ -397,6 +427,7 @@ export const parseOCRResult = (result: OCRResult): ParsedIDData => {
                         });
                         logs.push(`Found Issue Date at line ${i}`);
                     }
+                    // Once we find the valid bottom date, stop.
                     break;
                 }
             }
